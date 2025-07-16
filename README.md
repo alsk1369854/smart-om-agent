@@ -25,15 +25,29 @@ Experimental Results on BGL, Liberty, and Thunderbird datasets. The best results
 
 ## Benchmarks 
 ### Dataset logs
-| Datasets    | \# Logs    | Training Data |           |           | Testing Data |           |          |
-| ----------- | ---------- | ------------- | --------- | --------- | ------------ | --------- | -------- |
-|             |            | \# Logs       | Normal    | Abnormal  | \# Logs      | Normal    | Abnormal |
-| BGL         | 4,747,963  | 3,798,387     | 3,519,603 | 278,784   | 949,576      | 879,900   | 69,676   |
-| Liberty     | 5,000,000  | 4,000,007     | 2,719,580 | 1,280,427 | 999,993      | 679,895   | 320,098  |
-| Thunderbird | 10,000,000 | 8,000,003     | 7,996,051 | 3,952     | 1,999,997    | 1,999,012 | 985      |
+|  Datasets   |  \# Logs   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data |
+| :---------: | :--------: | :-----------: | :-----------: | :-----------: | :----------: | :----------: | :----------: |
+|             |            |    \# Logs    |    Normal     |   Abnormal    |   \# Logs    |    Normal    |   Abnormal   |
+|     BGL     | 4,747,963  |   3,798,387   |   3,519,603   |    278,784    |   949,576    |   879,900    |    69,676    |
+|   Liberty   | 5,000,000  |   4,000,007   |   2,719,580   |   1,280,427   |   999,993    |   679,895    |   320,098    |
+| Thunderbird | 10,000,000 |   8,000,003   |   7,996,051   |     3,952     |  1,999,997   |  1,999,012   |     985      |
+
+### Sliding window
+#### Count Window
+|  Datasets   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data  |
+| :---------: | :-----------: | :-----------: | :-----------: | :----------: | :----------: | :-----------: |
+|     BGL     |    37,984     |     3,904     |    10.28%     |    9,496     |    1,113     |    11.72%     |
+|   Liberty   |    40,001     |    27,855     |    69.64%     |    10,000    |    6,999     |    69.99%     |
+| Thunderbird |    80,001     |      740      |     0.92%     |    20,000    |     206      |     1.03%     |
 
 
-
+#### Time Window
+|  Datasets   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data  |
+| :---------: | :-----------: | :-----------: | :-----------: | :----------: | :----------: | :-----------: |
+|             |  \# Windows   |   Abnormal    | Anomaly ratio |  \# Windows  |   Abnormal   | Anomaly ratio |
+|     BGL     |     7,115     |     1,262     |    17.74%     |    6,168     |     863      |    13.99%     |
+|   Liberty   |     1,292     |      235      |    18.19%     |    1,292     |     168      |    13.00%     |
+| Thunderbird |      418      |      86       |    20.57%     |     418      |      63      |    15.07%     |
 
 ## Quick Start
 ### Install
