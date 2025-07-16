@@ -1,8 +1,39 @@
-# Smart O&M Agent
+# Smart O&M Agent: An Anomaly Detection Architecture for System Operation and Maintenance Based on RAG
 **Smart O&M Agent** is a system log anomaly detection framework that combines Large Language Model(LLM) and Retrieval-Augmented Generation(RAG). It can understand complex log semantics and detect high-density log anomalies, and can determine the current system status through the system log window.
 
 ## Workflow
 <image src="https://raw.githubusercontent.com/alsk1369854/smart-om-agent/refs/heads/master/docs/images/workflow.png" alt="workflow.png">
+
+## Experiment Results
+Experimental Results on BGL, Liberty, and Thunderbird datasets. The best results are indicated using bold typeface.
+
+|       Methods        |    BGL    |    BGL    |    BGL    |  Liberty  |  Liberty  |  Liberty  | Thunderbird | Thunderbird | Thunderbird |             |
+| :------------------: | :-------: | :-------: | :-------: | :-------: | :-------: | :-------: | :---------: | :---------: | :---------: | :---------: |
+|                      | **Prec.** | **Rec.**  |  **F1**   | **Prec.** | **Rec.**  |  **F1**   |  **Prec.**  |  **Rec.**   |   **F1**    | **Avg. F1** |
+|       DeepLog        |   0.166   |   0.988   |   0.285   |   0.751   |   0.855   |   0.800   |    0.017    |    0.966    |    0.033    |    0.373    |
+|      LogAnomaly      |   0.176   |   0.985   |   0.299   |   0.684   |   0.876   |   0.768   |    0.025    |    0.966    |    0.050    |    0.372    |
+|        PLELog        |   0.595   |   0.880   |   0.710   |   0.795   |   0.874   |   0.832   |    0.808    |    0.724    |    0.764    |    0.769    |
+|      FastLogAD       |   0.167   | **1.000** |   0.287   |   0.151   | **0.999** |   0.263   |    0.008    |    0.931    |    0.017    |    0.189    |
+|       LogBERT        |   0.165   |   0.989   |   0.283   |   0.902   |   0.633   |   0.744   |    0.022    |    0.172    |    0.039    |    0.355    |
+|      LogRobust       |   0.696   |   0.968   |   0.810   |   0.695   |   0.979   |   0.813   |    0.318    |  **1.000**  |    0.482    |    0.702    |
+|         CNN          |   0.698   |   0.965   |   0.810   |   0.580   |   0.914   |   0.709   |    0.870    |    0.690    |    0.769    |    0.763    |
+|      NeuralLog       |   0.792   |   0.884   |   0.835   |   0.875   |   0.926   |   0.900   |    0.794    |    0.931    |    0.857    |    0.864    |
+|        RAPID         |   0.874   |   0.399   |   0.548   |   0.911   |   0.611   |   0.732   |    0.200    |    0.207    |    0.203    |    0.494    |
+|        LogLLM        |   0.861   |   0.979   |   0.916   | **0.992** |   0.926   |   0.958   |    0.966    |    0.966    |    0.966    |    0.947    |
+| Smart O&M Agent(our) | **0.981** |   0.989   | **0.985** |   0.983   |   0.958   | **0.970** |  **1.000**  |  **1.000**  |  **1.000**  |  **0.985**  |
+
+
+## Benchmarks 
+### Dataset logs
+| Datasets    | \# Logs    | Training Data |           |           | Testing Data |           |          |
+| ----------- | ---------- | ------------- | --------- | --------- | ------------ | --------- | -------- |
+|             |            | \# Logs       | Normal    | Abnormal  | \# Logs      | Normal    | Abnormal |
+| BGL         | 4,747,963  | 3,798,387     | 3,519,603 | 278,784   | 949,576      | 879,900   | 69,676   |
+| Liberty     | 5,000,000  | 4,000,007     | 2,719,580 | 1,280,427 | 999,993      | 679,895   | 320,098  |
+| Thunderbird | 10,000,000 | 8,000,003     | 7,996,051 | 3,952     | 1,999,997    | 1,999,012 | 985      |
+
+
+
 
 ## Quick Start
 ### Install
@@ -20,7 +51,7 @@ python use.py
 python train.py
 ```
 
-## Download banchmarks
+## Download benchmarks
 
 ### BGL
 ```bash
