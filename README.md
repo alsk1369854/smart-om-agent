@@ -36,7 +36,7 @@ Benchmark datasets used in the experiments.
 
 ## Using Our Code
 ### 1. Setup
-- Python: 3.12.9
+- Python: 3.12.11
 - CUDA: 12
 - [Download benchmarks](#download-benchmarks-cli)
 - [Download based LLMs](#download-based-llms-cli)
