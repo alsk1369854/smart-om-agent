@@ -1,6 +1,5 @@
 import os
 import csv
-import pandas as pd
 
 class HistoryRecorder:
     def __init__(self, *, save_base: str, fieldnames: list[str]) -> None:
@@ -18,6 +17,4 @@ class HistoryRecorder:
         with open(self.save_path, mode="a", newline="") as f:
             writer = csv.DictWriter(f, fieldnames=self.fieldnames)
             writer.writerow(rowdict)
-    
-    # def get_record_df(self) -> pd.DataFrame:
-    #     return pd.concat(self.record, )
+            

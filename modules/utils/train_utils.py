@@ -9,7 +9,7 @@ def apply_label_smoothing_binary(targets: torch.Tensor, smoothing: float = 0.1) 
     return smoothed_target
 
 
-def parse_wins_df(df: pd.DataFrame, drop_duplicates: bool = True) -> tuple[list[list[str]], list[str]]:
+def parse_train_adllm_wins_df_to_train_case(df: pd.DataFrame, drop_duplicates: bool = True) -> tuple[list[list[str]], list[str]]:
     wins = []
     labels = []
     for _, group in df.groupby("win_id"):

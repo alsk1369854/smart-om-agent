@@ -4,7 +4,6 @@ from langgraph.graph import START, END, StateGraph
 from pydantic import BaseModel, Field
 from typing import Callable
 
-
 class SmartOperationAndMaintenanceAgent():
     TOP_K_ABNORMAL_LOGS = 5
     LOG_EMBEDDING_BATCH_SIZE = 100
@@ -69,7 +68,6 @@ class SmartOperationAndMaintenanceAgent():
         return workflow.compile()    
 
     def process_logs(self, logs: list[str]) -> str:
-        # Process logs using lem and adllm
         result = self.graph.invoke({ "logs": logs })
         system_state = result["system_state"]
         return system_state

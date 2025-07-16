@@ -206,9 +206,9 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-hf_models/*
-data/*
-output/*
+hf_models/
+data/
+output/
 temp/
 
 nohup.out

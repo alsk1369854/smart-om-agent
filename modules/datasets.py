@@ -38,7 +38,3 @@ class LogWindowDataset(Dataset):
             "log_win": self.log_wins[index],
             "label": self.labels[index],
         }
-        # return {
-        #     "log_win": self.log_wins[index],
-        #     "label": f"The system status is {self.labels[index]}."
-        # }

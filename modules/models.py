@@ -1,10 +1,9 @@
 import os
 import torch
-import numpy as np
 from torch import nn
 from transformers import BertTokenizerFast, BertModel, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import get_peft_model, LoraConfig, TaskType, PeftModel
-from typing import Self, Any, Literal
+from typing import Self, Any
 from . import types, prompts
 
 class LogEmbedModel(nn.Module):
@@ -13,6 +12,17 @@ class LogEmbedModel(nn.Module):
     bert: BertModel
     bert_tokenizer: BertTokenizerFast
     device: torch.device
+
+    def __init__(self):
+        super().__init__()
+        in_features = 768  # BERT 隱藏層維度
+        # 定義分類器（全連接層）
+        self.classifier = nn.Sequential(
+            nn.Linear(in_features, in_features // 2),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(in_features // 2, 1),
+        )
 
     @classmethod
     def from_pretrained(cls, *, path: str, device: torch.device | str = "auto") -> Self:
@@ -43,17 +53,12 @@ class LogEmbedModel(nn.Module):
             bert=os.path.join(save_base, "bert"),
             classifier=os.path.join(save_base, "classifier.pt"),
         )
-
-    def __init__(self):
-        super().__init__()
-        in_features = 768  # BERT 隱藏層維度
-        # 定義分類器（全連接層）
-        self.classifier = nn.Sequential(
-            nn.Linear(in_features, in_features // 2),
-            nn.ReLU(),
-            nn.Dropout(0.3),
-            nn.Linear(in_features // 2, 1),
-        )
+        
+    def pred(self, logs: list[str]):
+        self.eval()
+        with torch.no_grad():
+            outputs = self.forward(logs)
+            return torch.sigmoid(outputs).cpu().numpy()
         
     def forward(self, logs: list[str]):
         tokenized = self.bert_tokenizer(
@@ -75,13 +80,6 @@ class LogEmbedModel(nn.Module):
         self.bert_tokenizer.save_pretrained(save_paths.bert)
         torch.save(self.classifier.state_dict(), save_paths.classifier)
 
-    def pred(self, logs: list[str]):
-        self.eval()
-        with torch.no_grad():
-            outputs = self.forward(logs)
-            return torch.sigmoid(outputs).cpu().numpy()
-
-
 
 class AnomalyDetectionLLM(nn.Module):
     MAX_TOKEN_LEN = 512
@@ -94,6 +92,9 @@ class AnomalyDetectionLLM(nn.Module):
     system_suffix_tokens: Any
     abnormal_output_tokens: Any
     normal_output_tokens: Any
+    
+    def __init__(self) -> None:
+        super().__init__()
 
     @classmethod
     def from_pretrained(
@@ -122,8 +123,8 @@ class AnomalyDetectionLLM(nn.Module):
             device_map=device,
             attn_implementation="eager",
         )
-        model.llm = PeftModel.from_pretrained(base_llm, save_paths.llm, is_trainable=True)
-        model.llm_tokenizer = AutoTokenizer.from_pretrained(save_paths.llm, padding_side="right")
+        model.llm = PeftModel.from_pretrained(base_llm, save_paths.lora, is_trainable=True)
+        model.llm_tokenizer = AutoTokenizer.from_pretrained(base_llm_path, padding_side="right")
         model.llm_tokenizer.pad_token_id = model.llm_tokenizer.eos_token_id if model.llm_tokenizer.pad_token_id is None else model.llm_tokenizer.pad_token_id
         model.device = model.llm.device
         model.set_system_name_and_field_names(system_name=system_name, field_names=field_names)
@@ -153,7 +154,6 @@ class AnomalyDetectionLLM(nn.Module):
             device_map=device,
             attn_implementation="eager",
         )
-        print(base_llm.config._attn_implementation)
         model.llm = get_peft_model(
             base_llm,
             LoraConfig(
@@ -165,75 +165,41 @@ class AnomalyDetectionLLM(nn.Module):
                 task_type=TaskType.CAUSAL_LM
             )
         )
-        model.llm_tokenizer = AutoTokenizer.from_pretrained(base_llm_path, trust_remote_code=True, padding_side="right")
+        model.llm_tokenizer = AutoTokenizer.from_pretrained(base_llm_path, padding_side="right")
         model.llm_tokenizer.pad_token_id = model.llm_tokenizer.eos_token_id if model.llm_tokenizer.pad_token_id is None else model.llm_tokenizer.pad_token_id
         model.device = model.llm.device
         model.set_system_name_and_field_names(system_name=system_name, field_names=field_names)
         return model
-
-    def __init__(self) -> None:
-        super().__init__()
-
+    
     @classmethod
     def _get_save_paths(self, save_base: str) -> types.AnomalyDetecteLLMSavePaths:
         return types.AnomalyDetecteLLMSavePaths(
-            llm=os.path.join(save_base, "llm"),
+            lora=os.path.join(save_base, "lora"),
         )
-
-    def save_pretrained(self, *, path: str) -> None:
-        os.makedirs(path, exist_ok=True)
-        save_paths = self._get_save_paths(path)
-        self.llm.save_pretrained(save_paths.llm)
-        self.llm_tokenizer.save_pretrained(save_paths.llm)
-
-    def set_system_name_and_field_names(self, *, system_name: str | None, field_names: str) -> None:
-        prefix_prompt = prompts.ANOMALY_DETECTE_LLM_PREFIX_INSTRUCTION_TEMPLATE.format(
-            system_name="" if system_name is None else f" {system_name} ",
-            field_names=field_names
-        )
-        prefix_tokens = self.llm_tokenizer(
-            prefix_prompt,  
-            return_tensors="pt"
-        )["input_ids"][0]
-        shffix_tokens = self.llm_tokenizer(
-            prompts.ANOMALY_DETECTE_LLM_SUFFIX_INSTRUCTION, 
-            add_special_tokens=False, # Omit [BOS] token
-            return_tensors="pt"
-        )["input_ids"][0]
-        abnormal_output_tokens = self.llm_tokenizer("Abnormal", add_special_tokens=False, return_tensors="pt")["input_ids"][0]
-        normal_output_tokens = self.llm_tokenizer("Normal", add_special_tokens=False, return_tensors="pt")["input_ids"][0]
-        instruction_len = len(prefix_tokens) + len(shffix_tokens)
-        output_len = max(len(abnormal_output_tokens), len(normal_output_tokens)) + 1 # eos token
-
-        self.max_logs_tokens_len = self.MAX_TOKEN_LEN - (instruction_len + output_len)
-        if self.max_logs_tokens_len <= 16: 
-            raise Exception("need more tokens length to contain the logs tokens.")
         
-        self.system_prefix_tokens = prefix_tokens
-        self.system_suffix_tokens = shffix_tokens
-        self.abnormal_output_tokens = abnormal_output_tokens
-        self.normal_output_tokens = normal_output_tokens
+    def generate(self, log_win: list[str]) -> str:
+        self.eval()
+        with torch.no_grad():
+            log_win_tokens = self._parse_log_win_to_tokens(log_win)
+            # 建立 input_ids 與 attention_mask
+            input_ids = torch.cat([self.system_prefix_tokens, log_win_tokens, self.system_suffix_tokens], dim=0).unsqueeze(0).to(self.device)
+            attention_mask = torch.ones_like(input_ids).to(self.device)
+            input_len = len(input_ids[0])
 
-    # def unfreeze_llm_params(self) -> None:
-    #     for name, param in self.llm.named_parameters():
-    #         if 'lora' in name:
-    #             param.requires_grad = True
+            generation = self.llm.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=max(len(self.abnormal_output_tokens), len(self.normal_output_tokens)) + 10, 
+                pad_token_id=self.llm_tokenizer.pad_token_id,
+                do_sample=False, 
+                temperature=None,
+                top_k=None,
+                top_p=None, 
+            )
+            generation = generation[0][input_len:]
 
-    def _get_log_win_tokens(self, log_win: list[str]) -> torch.Tensor:
-        log_tokens_list = []
-        total_log_tokens_len = 0
-        index = 0
-        while (index < len(log_win)) and (total_log_tokens_len < self.max_logs_tokens_len):
-            log_tokens = self.llm_tokenizer(f"{log_win[index]}\n", add_special_tokens=False, return_tensors="pt")["input_ids"][0]
-            can_included = (len(log_tokens) + total_log_tokens_len) <= self.max_logs_tokens_len
-            if not can_included:
-                log_tokens = log_tokens[:self.max_logs_tokens_len - total_log_tokens_len]
-            total_log_tokens_len += len(log_tokens)
-            log_tokens_list.append(log_tokens)
-            index += 1
-
-        return torch.cat(log_tokens_list, dim=0)
-
+            return self.llm_tokenizer.decode(generation, skip_special_tokens=True).strip()
+        
     def forward(
         self, 
         log_wins: list[list[str]], 
@@ -244,7 +210,7 @@ class AnomalyDetectionLLM(nn.Module):
         labels_list = []
 
         for log_win, target in zip(log_wins, targets):
-            log_win_tokens = self._get_log_win_tokens(log_win)
+            log_win_tokens = self._parse_log_win_to_tokens(log_win)
             output_tokens = self.abnormal_output_tokens if target == 1 else self.normal_output_tokens
             
             # 建立 input_ids
@@ -284,26 +250,59 @@ class AnomalyDetectionLLM(nn.Module):
 
         return self.llm(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    def generate(self, log_win: list[str]) -> str:
-        self.eval()
-        with torch.no_grad():
-            log_win_tokens = self._get_log_win_tokens(log_win)
-            # 建立 input_ids 與 attention_mask
-            input_ids = torch.cat([self.system_prefix_tokens, log_win_tokens, self.system_suffix_tokens], dim=0).unsqueeze(0).to(self.device)
-            attention_mask = torch.ones_like(input_ids).to(self.device)
-            input_len = len(input_ids[0])
+    def save_pretrained(self, *, path: str) -> None:
+        os.makedirs(path, exist_ok=True)
+        save_paths = self._get_save_paths(path)
+        self.llm.save_pretrained(save_paths.lora)
 
-            generation = self.llm.generate(
-                input_ids=input_ids,
-                attention_mask=attention_mask,
-                max_new_tokens=max(len(self.abnormal_output_tokens), len(self.normal_output_tokens)) + 10, 
-                pad_token_id=self.llm_tokenizer.pad_token_id,
-                do_sample=False, 
-                temperature=None,
-                top_k=None,
-                top_p=None, 
-            )
-            generation = generation[0][input_len:]
+    def set_system_name_and_field_names(self, *, system_name: str | None, field_names: str) -> None:
+        prefix_prompt = prompts.ANOMALY_DETECTE_LLM_PREFIX_INSTRUCTION_TEMPLATE.format(
+            system_name="" if system_name is None else f" {system_name} ",
+            field_names=field_names
+        )
+        prefix_tokens = self.llm_tokenizer(
+            prefix_prompt,  
+            return_tensors="pt"
+        )["input_ids"][0]
+        shffix_tokens = self.llm_tokenizer(
+            prompts.ANOMALY_DETECTE_LLM_SUFFIX_INSTRUCTION, 
+            add_special_tokens=False, # Omit [BOS] token
+            return_tensors="pt"
+        )["input_ids"][0]
+        abnormal_output_tokens = self.llm_tokenizer("Abnormal", add_special_tokens=False, return_tensors="pt")["input_ids"][0]
+        normal_output_tokens = self.llm_tokenizer("Normal", add_special_tokens=False, return_tensors="pt")["input_ids"][0]
+        instruction_len = len(prefix_tokens) + len(shffix_tokens)
+        output_len = max(len(abnormal_output_tokens), len(normal_output_tokens)) + 1 # eos token
 
-            return self.llm_tokenizer.decode(generation, skip_special_tokens=True).strip()
+        self.max_logs_tokens_len = self.MAX_TOKEN_LEN - (instruction_len + output_len)
+        if self.max_logs_tokens_len <= 16: 
+            raise Exception("need more tokens length to contain the logs tokens.")
+        
+        self.system_prefix_tokens = prefix_tokens
+        self.system_suffix_tokens = shffix_tokens
+        self.abnormal_output_tokens = abnormal_output_tokens
+        self.normal_output_tokens = normal_output_tokens
+
+    # def unfreeze_llm_params(self) -> None:
+    #     for name, param in self.llm.named_parameters():
+    #         if 'lora' in name:
+    #             param.requires_grad = True
+    
+    def _parse_log_win_to_tokens(self, log_win: list[str]) -> torch.Tensor:
+        log_tokens_list = []
+        total_log_tokens_len = 0
+        index = 0
+        while (index < len(log_win)) and (total_log_tokens_len < self.max_logs_tokens_len):
+            log_tokens = self.llm_tokenizer(f"{log_win[index]}\n", add_special_tokens=False, return_tensors="pt")["input_ids"][0]
+            can_included = (len(log_tokens) + total_log_tokens_len) <= self.max_logs_tokens_len
+            if not can_included:
+                log_tokens = log_tokens[:self.max_logs_tokens_len - total_log_tokens_len]
+            total_log_tokens_len += len(log_tokens)
+            log_tokens_list.append(log_tokens)
+            index += 1
+
+        return torch.cat(log_tokens_list, dim=0)
+
+
+
 

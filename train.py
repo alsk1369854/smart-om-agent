@@ -98,7 +98,7 @@ def stage_two_train(
     safe_batch_size: int,
     top_k_logs: int,
     base_llm_name: str,
-    log_window_type: types.SlidingWindowTypes,
+    sliding_window_type: types.SlidingWindowTypes,
     system_name: str,
     log_table_columns: list[str],
 ) -> None:
@@ -121,7 +121,7 @@ def stage_two_train(
     train_utils.print_anomaly_detection_llm_training_info(
         train_case_name=train_case_name,
         base_llm_name=base_llm_name,
-        win_type=log_window_type,
+        win_type=sliding_window_type,
         epochs=epochs,
         lr=lr,
         top_k_logs=top_k_logs,
@@ -164,25 +164,39 @@ def stage_two_train(
 
 
 def main():
+    train_case_name = "smart-om-agent-bgl-cw-gemma2-9b"
     # Train output directory
     # - Log Embed Model: ./output/{train_case_name}/lem/
     # - Anomaly Detection LLM: ./output/{train_case_name}/adllm/
     
-    # work_config = configs.BGL_WORK_CONFIG # configs.BGL_WORK_CONFIG | configs.LIBERTY_WORK_CONFIG | configs.THUNDERBIRD_WORK_CONFIG
-    train_and_test_sampling_fn = samp_utils.train_test_sampling # samp_utils.train_test_sampling | samp_utils.logllm_train_test_sampling
-    log_window_type: types.SlidingWindowTypes = "count" # "count" | "time"
-    base_llm_name = "gemma-2-9b" # ./hf_models/{base_llm_name}
-    train_case_name = "TEST-count-wins-based-gemma-2-9b-with-our-oversampling"
-    
-    work_config = configs.TEST_WORK_CONFIG
+    # ===== Start of settings =====
+    dataset_type: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
+    sampling_type: types.SamplingTypes = "our" # "our" | "logllm"
+    sliding_window_type: types.SlidingWindowTypes = "count" # "count" | "time"
+    base_llm_name: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    # ===== End of settings =====
     
     # Prepare training data
-    ldfh = log_utils.LogDataFrameHelper(work_config.log_config.path)
-    struct_logs_df = ldfh.build_struct(work_config.log_config)
-    ldfh.save_struct(struct_logs_df)
-    logs_df = ldfh.build_logs(work_config.log_config, struct_logs_df, log_utils.log_regx_replase)
-    ldfh.save_logs(logs_df)    
-    train_logs_df, test_logs_df = train_and_test_sampling_fn(logs_df, environments.TRAIN_RATIO)
+    work_config = configs.WORK_CONFIG_MAP[dataset_type]
+    ldfh = log_utils.LogDataFrameHelper(work_config.dataset_config.path)
+    # Build structured logs
+    struct_logs_df = ldfh.build_struct_logs(
+        log_path=work_config.dataset_config.path,
+        log_format=work_config.dataset_config.fromat,
+        start_line=work_config.dataset_config.start_line,
+        end_line=work_config.dataset_config.end_line,
+    )
+    ldfh.save_to_csv(struct_logs_df, f"{work_config.dataset_config.path}-struct-logs.csv")
+    # Build semantic logs
+    logs_df = ldfh.build_semantic_logs(
+        struct_logs_df=struct_logs_df,
+        feature_columns=work_config.dataset_config.feat_columns,
+        log_regex_replase_fn=log_utils.log_regex_replase,
+    )
+    ldfh.save_to_csv(logs_df, f"{work_config.dataset_config.path}-semantic-logs.csv")
+    # Split training and testing logs
+    sampling_fn = samp_utils.train_test_sampling if sampling_type == "our" else samp_utils.logllm_train_test_sampling
+    train_logs_df, test_logs_df = sampling_fn(logs_df, environments.TRAIN_RATIO)
     
     # ===== Stage one training =====
     train_unique_logs_df = train_logs_df.drop_duplicates(subset=["log", "label"], inplace=False)
@@ -204,34 +218,24 @@ def main():
         train_unique_logs + test_unique_logs,
     )
     # Sliding log windows
-    build_count_wins_fn = partial(
-        ldfh.build_count_wins,  
-        lem_score_map=log_feature_vector_map,
-        win_size_logs=100,  # 每個 window 包含的 log 數量
-        win_step_logs=100,  # 每個 window 的步進
-    )
-    build_time_wins_fn = partial(
-        ldfh.build_time_wins, 
-        lem_score_map=log_feature_vector_map,
-        win_size_secs=60 * 60,  # 每個 window 的時間長度 (秒)
-        win_step_secs=30 * 60,  # 每個 window 的步進 (秒)
-    )
-    build_wins_fn = build_count_wins_fn if log_window_type == "count" else build_time_wins_fn
-    train_wins_df = build_wins_fn(logs_df=train_logs_df)
-    test_wins_df = build_wins_fn(logs_df=test_logs_df)
+    build_wins_fn = ldfh.build_count_wins if sliding_window_type == "count" else ldfh.build_time_wins
+    train_wins_df = build_wins_fn(df=train_logs_df)
+    train_wins_df = ldfh.build_train_adllm_wins(train_wins_df, log_feature_vector_map)
+    test_wins_df = build_wins_fn(df=test_logs_df)
+    test_wins_df = ldfh.build_train_adllm_wins(test_wins_df, log_feature_vector_map)
     # Input and output cases
-    train_wins, train_wins_label = train_utils.parse_wins_df(train_wins_df)
-    test_wins, test_wins_label = train_utils.parse_wins_df(test_wins_df)
+    train_wins, train_wins_label = train_utils.parse_train_adllm_wins_df_to_train_case(train_wins_df)
+    test_wins, test_wins_label = train_utils.parse_train_adllm_wins_df_to_train_case(test_wins_df)
     # Train Anomaly Detection LLM
     stage_two_train(
         train_case_name=train_case_name,
-        epochs=5, lr=5e-5, safe_batch_size=9, top_k_logs=5,
+        epochs=5, lr=5e-5, safe_batch_size=3, top_k_logs=5,
         train_cases=(train_wins, train_wins_label),
         test_cases=(test_wins, test_wins_label),
         base_llm_name=base_llm_name,
-        log_window_type=log_window_type,
+        sliding_window_type=sliding_window_type,
         system_name=work_config.system_name,
-        log_table_columns=work_config.log_config.feat_columns,
+        log_table_columns=work_config.dataset_config.feat_columns,
     )   
     
 

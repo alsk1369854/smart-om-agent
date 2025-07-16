@@ -1,16 +1,14 @@
 
-import pandas as pd
 from pydantic import BaseModel
-from typing import Callable, Literal, Optional, Union
+from typing import Literal
 
-
-EvalTypes = Literal["without_stage_1_and_2", "without_stage_1", "without_stage_2", "smart_om_agent"]
-
-DatasetTypes = Literal["train", "test", "train_logllm", "test_logllm"]
-
-WinDatasetTypes =  Union[DatasetTypes, Literal["untrained_lem_train", "untrained_lem_test"]]
+DatasetTypes = Literal["BGL", "Liberty", "Thunderbird", "test"]
 
 SlidingWindowTypes = Literal["count", "time"]
+
+SamplingTypes = Literal["our", "logllm"]
+
+BaseLLMTypes = Literal["gemma-2-9b", "gemma-3-4b-it", "Llama-3.1-8B-Instruct", "Llama-3.2-3B-Instruct"]
 
 class EvaluationResult(BaseModel):
     accuracy: float
@@ -20,13 +18,13 @@ class EvaluationResult(BaseModel):
     cm: list[list[int]]
 
 class AnomalyDetecteLLMSavePaths(BaseModel):
-    llm: str
+    lora: str
 
 class LogEmbedModelSavePaths(BaseModel):
     bert: str
     classifier: str
 
-class LogConfig(BaseModel):
+class DatasetConfig(BaseModel):
     path: str
     fromat: str
     start_line: int
@@ -35,12 +33,7 @@ class LogConfig(BaseModel):
     feat_columns: list[str]
     label_column: str
 
-class TrainConfig(BaseModel):
-    hf_models_path: str
-    save_base: str 
-
 class WorkConfig(BaseModel):
     name: str
     system_name: str
-    log_config: LogConfig
-    train_config: TrainConfig
+    dataset_config: DatasetConfig
