@@ -48,12 +48,13 @@ def main() -> None:
     # ===== Test the agent with some logs =====
     ldfh = log_utils.LogDataFrameHelper(work_config.log_config.path)
     log_struct_df = ldfh.load_struct()
-    log_struct_df = log_struct_df.iloc[len(log_struct_df) * environments.TRAIN_RATIO:]  # Use the first half for testing
+    log_struct_df = log_struct_df.iloc[len(log_struct_df)*environments.TRAIN_RATIO:] 
+     
 
-    log_path=work_config.log_config.path
-    log_fromat=work_config.log_config.fromat
-    logs_df = get_first_k_logs(log_path, log_fromat, 20000)
-    logs_df = logs_df.iloc[15000:]
+    # log_path=work_config.log_config.path
+    # log_fromat=work_config.log_config.fromat
+    # logs_df = get_first_k_logs(log_path, log_fromat, 20000)
+    # logs_df = logs_df.iloc[15000:]
     logs = logs_df[["level", "content"]].apply(lambda x: f"{x['level']}, {x['content']}", axis=1).tolist()
     labels = logs_df["label"].apply(lambda x: "Normal" if x == "-" else "Abnormal").tolist()
     test_cases = []
