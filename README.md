@@ -24,7 +24,8 @@ Experimental Results on BGL, Liberty, and Thunderbird datasets. The best results
 
 
 ## Benchmarks 
-### Dataset logs
+Benchmark datasets used in the experiments.
+
 |  Datasets   |  \# Logs   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data |
 | :---------: | :--------: | :-----------: | :-----------: | :-----------: | :----------: | :----------: | :----------: |
 |             |            |    \# Logs    |    Normal     |   Abnormal    |   \# Logs    |    Normal    |   Abnormal   |
@@ -32,40 +33,34 @@ Experimental Results on BGL, Liberty, and Thunderbird datasets. The best results
 |   Liberty   | 5,000,000  |   4,000,007   |   2,719,580   |   1,280,427   |   999,993    |   679,895    |   320,098    |
 | Thunderbird | 10,000,000 |   8,000,003   |   7,996,051   |     3,952     |  1,999,997   |  1,999,012   |     985      |
 
-### Sliding window
-#### Count Window
-|  Datasets   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data  |
-| :---------: | :-----------: | :-----------: | :-----------: | :----------: | :----------: | :-----------: |
-|     BGL     |    37,984     |     3,904     |    10.28%     |    9,496     |    1,113     |    11.72%     |
-|   Liberty   |    40,001     |    27,855     |    69.64%     |    10,000    |    6,999     |    69.99%     |
-| Thunderbird |    80,001     |      740      |     0.92%     |    20,000    |     206      |     1.03%     |
 
+## Using Our Code
+### Setup
+- Python: 3.12.9
+- CUDA: 12
+- [Download benchmarks](#download-benchmarks-cli)
+- [Download based LLMs](#download-based-llms-cli)
 
-#### Time Window
-|  Datasets   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data  |
-| :---------: | :-----------: | :-----------: | :-----------: | :----------: | :----------: | :-----------: |
-|             |  \# Windows   |   Abnormal    | Anomaly ratio |  \# Windows  |   Abnormal   | Anomaly ratio |
-|     BGL     |     7,115     |     1,262     |    17.74%     |    6,168     |     863      |    13.99%     |
-|   Liberty   |     1,292     |      235      |    18.19%     |    1,292     |     168      |    13.00%     |
-| Thunderbird |      418      |      86       |    20.57%     |     418      |      63      |    15.07%     |
-
-## Quick Start
-### Install
+### Install dependencies
 ```bash
 pip install transformers bitsandbytes peft datasets pandas torch scikit-learn pydantic matplotlib langgraph seaborn
 ```
 
-### Use
+### Used for system anomaly detection
 ```bash
 python use.py
 ```
 
-### Training
+### Two-stage training of **Smart O&M Agent**
+The training results will be stored in `./output/`
+
 ```bash
 python train.py
 ```
 
-## Download benchmarks
+<h1 id="download-benchmarks-cli">
+    Download benchmarks Cli
+</h1>
 
 ### BGL
 ```bash
@@ -90,6 +85,10 @@ export DATA_DIR=data
 export DATA_NAME=Liberty
 mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L http://0b4af6cdc2f0c5998459-c0245c5c937c5dedcca3f1764ecc9b2f.r43.cf2.rackcdn.com/hpc4/liberty2.gz -o ${DATA_DIR}/${DATA_NAME}.gz && gunzip -c ${DATA_DIR}/${DATA_NAME}.gz > ${DATA_DIR}/${DATA_NAME}/${DATA_NAME}.log && rm ${DATA_DIR}/${DATA_NAME}.gz
 ```
+
+<h1 id="download-based-llms-cli">
+    Download based LLMs cli
+</h1>
 
 ## Download based LLMs
 ```bash
