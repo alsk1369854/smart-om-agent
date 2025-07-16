@@ -23,7 +23,7 @@ Experimental Results on BGL, Liberty, and Thunderbird datasets. The best results
 | Smart O&M Agent(our) | **0.981** |   0.989   | **0.985** |   0.983   |   0.958   | **0.970** |  **1.000**  |  **1.000**  |  **1.000**  |  **0.985**  |
 
 
-## Benchmarks 
+## Datasets 
 Benchmark datasets used in the experiments.
 
 |  Datasets   |  \# Logs   | Training Data | Training Data | Training Data | Testing Data | Testing Data | Testing Data |
