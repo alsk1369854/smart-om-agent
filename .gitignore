@@ -209,5 +209,6 @@ __marimo__/
 hf_models/*
 data/*
 output/*
+temp/
 
 nohup.out
