@@ -35,52 +35,50 @@ Benchmark datasets used in the experiments.
 
 
 ## Using Our Code
-### Setup
+### 1. Setup
 - Python: 3.12.9
 - CUDA: 12
 - [Download benchmarks](#download-benchmarks-cli)
 - [Download based LLMs](#download-based-llms-cli)
 
-### Install dependencies
+### 2. Install dependencies
 ```bash
 pip install transformers bitsandbytes peft datasets pandas torch scikit-learn pydantic matplotlib langgraph seaborn
 ```
 
-### Used for system anomaly detection
-```bash
-python use.py
-```
-
-### Two-stage training of **Smart O&M Agent**
+### 3. Two-stage training of **Smart O&M Agent**
 The training results will be stored in `./output/`
 
 ```bash
 python train.py
 ```
 
+### 4. Used for system anomaly detection
+```bash
+python use.py
+```
+
+
 <h1 id="download-benchmarks-cli">
     Download benchmarks Cli
 </h1>
 
-### BGL
+## [BGL](https://zenodo.org/records/8196385/files/BGL.zip?download=1)
 ```bash
-# https://zenodo.org/records/8196385/files/BGL.zip?download=1
 export DATA_DIR=data
 export DATA_NAME=BGL
 mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L https://zenodo.org/records/8196385/files/BGL.zip?download=1 -o ${DATA_DIR}/${DATA_NAME}.zip && unzip ${DATA_DIR}/${DATA_NAME}.zip -d ${DATA_DIR}/${DATA_NAME} && rm ${DATA_DIR}/${DATA_NAME}.zip
 ```
 
-## Thunderbird
+## [Thunderbird](https://zenodo.org/records/8196385/files/Thunderbird.tar.gz?download=1)
 ```bash
-# https://zenodo.org/records/8196385/files/Thunderbird.tar.gz?download=1
 export DATA_DIR=data
 export DATA_NAME=Thunderbird
 mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L https://zenodo.org/records/8196385/files/Thunderbird.tar.gz?download=1 -o ${DATA_DIR}/${DATA_NAME}.tar.gz && tar -xzvf ${DATA_DIR}/${DATA_NAME}.tar.gz -C ${DATA_DIR}/${DATA_NAME} && rm ${DATA_DIR}/${DATA_NAME}.tar.gz
 ```
 
-### Liberty
+## [Liberty](http://0b4af6cdc2f0c5998459-c0245c5c937c5dedcca3f1764ecc9b2f.r43.cf2.rackcdn.com/hpc4/liberty2.gz)
 ```bash
-# http://0b4af6cdc2f0c5998459-c0245c5c937c5dedcca3f1764ecc9b2f.r43.cf2.rackcdn.com/hpc4/liberty2.gz
 export DATA_DIR=data
 export DATA_NAME=Liberty
 mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L http://0b4af6cdc2f0c5998459-c0245c5c937c5dedcca3f1764ecc9b2f.r43.cf2.rackcdn.com/hpc4/liberty2.gz -o ${DATA_DIR}/${DATA_NAME}.gz && gunzip -c ${DATA_DIR}/${DATA_NAME}.gz > ${DATA_DIR}/${DATA_NAME}/${DATA_NAME}.log && rm ${DATA_DIR}/${DATA_NAME}.gz
@@ -90,7 +88,7 @@ mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L http://0b4af6cdc2f0c5998459-c0245c5
     Download based LLMs cli
 </h1>
 
-## Download based LLMs
+## 1. Login Huggingface
 ```bash
 pip install -U "huggingface_hub[cli]"
 pip install huggingface_hub[hf_xet]
@@ -99,37 +97,38 @@ export HF_TOKEN=<your-huggingface-token>
 huggingface-cli login --token ${HF_TOKEN} --add-to-git-credential
 ```
 
-### BERT
+## [BERT](https://huggingface.co/google-bert/bert-base-uncased)
 ```bash
 export SAVE_PATH=hf_models/bert-base-uncased
 export MODEL_NAME=google-bert/bert-base-uncased
 nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
-### Gemma2-9B
+## [Gemma2-9B](https://huggingface.co/google/gemma-2-9b)
 ```bash
 export SAVE_PATH=hf_models/gemma-2-9b
 export MODEL_NAME=google/gemma-2-9b
 nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
-### Gemma3-4B
+## [Gemma3-4B-IT](https://huggingface.co/google/gemma-3-4b-it)
 ```bash
 export SAVE_PATH=hf_models/gemma-3-4b-it
 export MODEL_NAME=google/gemma-3-4b-it
 nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
-### Llama3.1-8B
+## [Llama3.2-3B](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
+```bash
+export SAVE_PATH=hf_models/Llama-3.2-3B-Instruct
+export MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
+nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
+```
+
+## [Llama3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct)
 ```bash
 export SAVE_PATH=hf_models/Llama-3.1-8B-Instruct
 export MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
 nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
-### Llama3.2-3B
-```bash
-export SAVE_PATH=hf_models/Llama-3.2-3B-Instruct
-export MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
-nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
-```
