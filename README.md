@@ -1,5 +1,5 @@
 # Smart O&M Agent
-**Smart O&M Agent** is a system log anomaly detection framework that combines a Large Language Model(LLM) with Retrieval-Augmented Generation(RAG). It can understand complex log semantics and detect high-density log anomalies, and can determine the current system status through the system log window.
+**Smart O&M Agent** is a system log anomaly detection framework that combines Large Language Model(LLM) and Retrieval-Augmented Generation(RAG). It can understand complex log semantics and detect high-density log anomalies, and can determine the current system status through the system log window.
 
 ## Workflow
 <image src="https://raw.githubusercontent.com/alsk1369854/smart-om-agent/refs/heads/master/docs/images/workflow.png" alt="workflow.png">
