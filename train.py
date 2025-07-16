@@ -63,9 +63,11 @@ def stage_one_train(
         train_labels=train_labels_oversmap,
     )
     
-    # Train Log Embed Model
+    # New Log Embed Model
     bert_path = "./hf_models/bert-base-uncased"
     log_embed_model = models.LogEmbedModel.new(bert_path=bert_path)
+
+    # Training
     train_generator = torch.Generator().manual_seed(environments.RANDOM_STATE)
     train_loader = DataLoader(
         dataset=train_dataset, batch_size=micro_batch_size, generator=train_generator,
@@ -128,7 +130,15 @@ def stage_two_train(
         train_labels=train_labels_oversampe,
     )
     
-    # Train Anormaly Detection LLM
+    # New Anomaly Detection LLM
+    base_llm_path = f"./hf_models/{base_llm_name}"
+    anomaly_detection_llm = models.AnomalyDetectionLLM.new(
+        base_llm_path=base_llm_path, 
+        system_name=system_name, 
+        field_names=", ".join([col.title() for col in log_table_columns])
+    )
+
+    # Training
     train_generator = torch.Generator().manual_seed(environments.RANDOM_STATE)
     train_loader = DataLoader(
         dataset=train_dataset,
@@ -137,15 +147,6 @@ def stage_two_train(
         collate_fn=train_dataset.collate_fu
     )
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, collate_fn=test_dataset.collate_fu)
-
-    # 載入模型
-    base_llm_path = f"./hf_models/{base_llm_name}"
-    anomaly_detection_llm = models.AnomalyDetectionLLM.new(
-        base_llm_path=base_llm_path, 
-        system_name=system_name, 
-        field_names=", ".join([col.title() for col in log_table_columns])
-    )
-    # 訓練模型   
     train_adllm.train(
         adllm=anomaly_detection_llm,
         epochs=epochs,
@@ -191,7 +192,7 @@ def main():
     test_unique_logs, test_unique_logs_labels = test_unique_logs_df["log"].tolist(), test_unique_logs_df["label"].tolist()
     # Train Log Embed Model
     stage_one_train(
-        train_case_name=train_case_name.name, 
+        train_case_name=train_case_name, 
         epochs=10, lr=5e-5, safe_batch_size=256,
         train_cases=(train_unique_logs, train_unique_logs_labels),
         test_cases=(test_unique_logs, test_unique_logs_labels),
@@ -224,7 +225,7 @@ def main():
     # Train Anomaly Detection LLM
     stage_two_train(
         train_case_name=train_case_name,
-        epochs=5, lr=5e-5, safe_batch_size=3, top_k_logs=5,
+        epochs=5, lr=5e-5, safe_batch_size=9, top_k_logs=5,
         train_cases=(train_wins, train_wins_label),
         test_cases=(test_wins, test_wins_label),
         base_llm_name=base_llm_name,

@@ -31,26 +31,28 @@ class LogDataFrameHelper:
         self.bast_log_path = bast_log_path
 
     # struct
-    def get_struct_path(self) -> str:
-        return self.bast_log_path + "_struct.csv"
+    def get_struct_logs_path(self) -> str:
+        return self.bast_log_path + "_struct_logs.csv"
     
-    def build_struct(
+    def build_struct_logs(
         self,
-        config: types.LogConfig,
+        log_path: str,
+        log_fromat: str, # e.g. "<label> <timestamp> <date> <node> <time> <node_repeat> <type> <component> <level> <content>",
+        start_line: int = 0,
+        end_line: Optional[int] = None,
     ) -> pd.DataFrame:
-        fieldnames = config.fromat.split(' ')
+        fieldnames = log_fromat.split(' ')
         fieldnames = [f.strip('<>') for f in fieldnames]
         fieldnames_len = len(fieldnames)
         data = []
         lines_count = -1
-        with open(config.path, 'r', encoding='latin-1') as f:
+        with open(log_path, 'r', encoding='latin-1') as f:
             while True:
                 line = f.readline()
                 lines_count += 1
-                is_over_end_line = (config.start_line is not None) and (lines_count >= config.end_line)
-                if not line or is_over_end_line:
+                if not line or (lines_count >= end_line):
                     break
-                if lines_count < config.start_line:
+                if start_line > lines_count:
                     continue
 
                 line.strip()
@@ -59,110 +61,168 @@ class LogDataFrameHelper:
                 data.append(struct_line)
         return pd.DataFrame(data, columns=fieldnames)
 
+    def save_struct_logs(self, df: pd.DataFrame):
+        df.to_csv(self.get_struct_logs_path(), index=False, chunksize=10000)
     
-    def save_struct(self, df: pd.DataFrame):
-        df.to_csv(self.get_struct_path(), index=False, chunksize=10000)
+    def load_struct_logs(self) -> pd.DataFrame:
+        return pd.read_csv(self.get_struct_logs_path())
     
-    def load_struct(self) -> pd.DataFrame:
-        return pd.read_csv(self.get_struct_path())
-    
-    # logs
-    def get_logs_path(self, dtype: Optional[types.DatasetTypes] = None) -> str:
-        suffix = "_logs.csv"
+    # semantic_logs
+    def get_semantic_logs_path(self, dtype: Optional[types.DatasetTypes] = None) -> str:
+        suffix = "_semantic_logs.csv"
         suffix = suffix if dtype is None else f"_{dtype}" + suffix
         return self.bast_log_path + suffix
     
-    def build_logs(
+    def build_semantic_logs(
         self,
-        config: types.LogConfig,
         struct_df: pd.DataFrame,
+        feature_columns: list[str],
         log_rex_replase_fn: Callable[[str], str]
     ) -> pd.DataFrame:
         struct_df = struct_df.copy()
         data = []
-        for _, row in tqdm(struct_df.iterrows(), total=len(struct_df), desc=f"Building logs"):
-            timestamp = row[config.timestamp_column]
-            log = ", ".join(row[config.feat_columns])
+        for _, row in tqdm(struct_df.iterrows(), total=len(struct_df), desc=f"Building semantic logs"):
+            timestamp = row["timestamp"]
+            log = ", ".join(row[feature_columns])
             log = log_rex_replase_fn(log)
-            label = row[config.label_column]
+            label = row["label"]
             data.append([timestamp, log, label])
-        logs_df = pd.DataFrame(data, columns=["timestamp", "log", "label"])
-        return logs_df
+        return pd.DataFrame(data, columns=["timestamp", "log", "label"])
 
-    def save_logs(self, df: pd.DataFrame, dtype: Optional[types.DatasetTypes] = None):
-        df.to_csv(self.get_logs_path(dtype), index=False, chunksize=10000)
+    def save_semantic_logs(self, df: pd.DataFrame, dtype: Optional[types.DatasetTypes] = None):
+        df.to_csv(self.get_semantic_logs_path(dtype), index=False, chunksize=10000)
     
-    def load_logs(self, dtype: Optional[types.DatasetTypes] = None) -> pd.DataFrame:
-        return pd.read_csv(self.get_logs_path(dtype=dtype)).astype({"log": str})
+    def load_semantic_logs(self, dtype: Optional[types.DatasetTypes] = None) -> pd.DataFrame:
+        return pd.read_csv(self.get_semantic_logs_path(dtype=dtype)).astype({"log": str})
     
-    # wins
-    def get_wins_path(self, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes) -> str:
-        suffix = "_wins.csv"
+    # train_adllm_wins
+    def get_train_adllm_wins_path(self, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes) -> str:
+        suffix = "_train_adllm_wins.csv"
         suffix = f"_{wtype}" + suffix
         suffix = f"_{dtype}" + suffix
         return self.bast_log_path + suffix
-    
-    def build_time_wins(
+
+    def build_time_winds(
         self,
-        logs_df: pd.DataFrame,
-        lem_score_map: dict[str, float],
-        win_size_secs: int,
-        win_step_secs: int,
+        df: pd.DataFrame,
+        win_size_secs: int = 60 * 60,  # 每個 window 的時間長度 (秒)
+        win_step_secs: int = 30 * 60,  # 每個 window 的步進 (秒)
     ) -> pd.DataFrame:
-        logs_df = logs_df.copy()
-        logs_df["binary_label"] = logs_df["label"].apply(lambda x: 0 if x == "-" else 1)
-        logs_df["lem_score"] = logs_df["log"].apply(lambda x: lem_score_map[x])
-        logs_df["timestamp"] = pd.to_datetime(logs_df["timestamp"], unit="s")
-        logs_df.sort_values(by=["timestamp"], ascending=True, inplace=True)
+        df = df.copy()
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+        df.sort_values(by=["timestamp"], ascending=True, inplace=True)
         # 預估總共需要幾個 window
-        start_time = logs_df["timestamp"].min()
-        end_time = logs_df["timestamp"].max()
+        start_time = df["timestamp"].min()
+        end_time = df["timestamp"].max()
         total_seconds = (end_time - start_time).total_seconds()
         total_windows = int(total_seconds // win_step_secs) + 1  
         # 開始分割 window
         current_time = start_time
         win_dfs = []
-        for index in tqdm(range(total_windows), desc="Building time wins"):
+        for index in tqdm(range(total_windows), desc="Building time windows"):
             # 建立窗口區間
-            win_mask = (current_time <= logs_df["timestamp"]) & (logs_df["timestamp"] < (current_time + pd.Timedelta(seconds=win_size_secs)))
-            win_df = logs_df[win_mask].copy()
+            win_mask = (current_time <= df["timestamp"]) & (df["timestamp"] < (current_time + pd.Timedelta(seconds=win_size_secs)))
+            win_df = df[win_mask].copy()
+            win_df["win_id"] = index
+            win_dfs.append(win_df)
+            current_time += pd.Timedelta(seconds=win_step_secs)
+        return pd.concat(win_dfs, ignore_index=True)
+    
+    
+    def build_train_adllm_time_wins(
+        self,
+        semantic_logs_df: pd.DataFrame,
+        lem_score_map: dict[str, float],
+        win_size_secs: int,
+        win_step_secs: int,
+    ) -> pd.DataFrame:
+        semantic_logs_df = semantic_logs_df.copy()
+        semantic_logs_df["binary_label"] = semantic_logs_df["label"].apply(lambda x: 0 if x == "-" else 1)
+        semantic_logs_df["lem_score"] = semantic_logs_df["log"].apply(lambda x: lem_score_map[x])
+        semantic_logs_df["timestamp"] = pd.to_datetime(semantic_logs_df["timestamp"], unit="s")
+        semantic_logs_df.sort_values(by=["timestamp"], ascending=True, inplace=True)
+        # 預估總共需要幾個 window
+        start_time = semantic_logs_df["timestamp"].min()
+        end_time = semantic_logs_df["timestamp"].max()
+        total_seconds = (end_time - start_time).total_seconds()
+        total_windows = int(total_seconds // win_step_secs) + 1  
+        # 開始分割 window
+        current_time = start_time
+        win_dfs = []
+        for index in tqdm(range(total_windows), desc="Building time train wins"):
+            # 建立窗口區間
+            win_mask = (current_time <= semantic_logs_df["timestamp"]) & (semantic_logs_df["timestamp"] < (current_time + pd.Timedelta(seconds=win_size_secs)))
+            win_df = semantic_logs_df[win_mask].copy()
             win_df["win_id"] = index
             win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
             win_dfs.append(win_df)
             current_time += pd.Timedelta(seconds=win_step_secs)
         return pd.concat(win_dfs, ignore_index=True)
-
+    
     def build_count_wins(
+        self, 
+        df: pd.DataFrame,
+        win_size_logs: int,
+        win_step_logs: int,
+    ) -> pd.DataFrame:
+        df = df.copy()
+        df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+        df.sort_values(by=["timestamp"], ascending=True, inplace=True)
+        # 預估總共需要幾個 window
+        total_wins = int(len(df) // win_step_logs) + 1 
+        # 開始分割 window
+        current_index = 0
+        win_dfs = []
+        for index in tqdm(range(total_wins), desc="Building count wins"):
+            # 建立窗口區間
+            win_df = df.iloc[current_index:current_index + win_size_logs].copy()
+            win_df["win_id"] = index
+            win_dfs.append(win_df)
+            current_index += win_step_logs
+        return pd.concat(win_dfs, ignore_index=True)
+
+    def build_train_adllm_count_wins(
         self,
         logs_df: pd.DataFrame,
         lem_score_map: dict[str, float],
         win_size_logs: int,
         win_step_logs: int,
     ) -> pd.DataFrame:
-        logs_df = logs_df.copy()
-        logs_df["binary_label"] = logs_df["label"].apply(lambda x: 0 if x == "-" else 1)
-        logs_df["lem_score"] = logs_df["log"].apply(lambda x: lem_score_map[x])
-        logs_df["timestamp"] = pd.to_datetime(logs_df["timestamp"], unit="s")
-        logs_df.sort_values(by=["timestamp"], ascending=True, inplace=True)
-        # 預估總共需要幾個 window
-        total_wins = int(len(logs_df) // win_step_logs) + 1  
-        # 開始分割 window
-        current_index = 0
+        semantic_logs_df = semantic_logs_df.copy()
+        wins_df = self.build_count_wins(semantic_logs_df, win_size_logs, win_step_logs)
+        wins_df["binary_label"] = wins_df["label"].apply(lambda x: 0 if x == "-" else 1)
+        wins_df["lem_score"] = wins_df["log"].apply(lambda x: lem_score_map[x])
+
         win_dfs = []
-        for index in tqdm(range(total_wins), desc="Building count wins"):
-            # 建立窗口區間
-            win_df = logs_df.iloc[current_index:current_index + win_size_logs].copy()
-            win_df["win_id"] = index
+        for win_id, win_df in tqdm(wins_df.groupby("win_id"), desc="Building train adllm count wins"):
             win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
             win_dfs.append(win_df)
-            current_index += win_step_logs
         return pd.concat(win_dfs, ignore_index=True)
 
-    def save_wins(self, df: pd.DataFrame, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes):
-        df.to_csv(self.get_wins_path(dtype, wtype), index=False, chunksize=10000)
+        # semantic_logs_df = semantic_logs_df.copy()
+        # semantic_logs_df["binary_label"] = semantic_logs_df["label"].apply(lambda x: 0 if x == "-" else 1)
+        # semantic_logs_df["lem_score"] = semantic_logs_df["log"].apply(lambda x: lem_score_map[x])
+        # semantic_logs_df["timestamp"] = pd.to_datetime(semantic_logs_df["timestamp"], unit="s")
+        # semantic_logs_df.sort_values(by=["timestamp"], ascending=True, inplace=True)
+        # # 預估總共需要幾個 window
+        # total_wins = int(len(semantic_logs_df) // win_step_semantic_logs) + 1  
+        # # 開始分割 window
+        # current_index = 0
+        # win_dfs = []
+        # for index in tqdm(range(total_wins), desc="Building count train wins"):
+        #     # 建立窗口區間
+        #     win_df = semantic_logs_df.iloc[current_index:current_index + win_size_semantic_logs].copy()
+        #     win_df["win_id"] = index
+        #     win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
+        #     win_dfs.append(win_df)
+        #     current_index += win_step_semantic_logs
+        # return pd.concat(win_dfs, ignore_index=True)
+
+    def save_train_adllm_wins(self, df: pd.DataFrame, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes):
+        df.to_csv(self.get_train_adllm_wins_path(dtype, wtype), index=False, chunksize=10000)
     
-    def load_wins(self, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes) -> pd.DataFrame:
-        return pd.read_csv(self.get_wins_path(dtype=dtype, wtype=wtype)).astype({
+    def load_train_adllm_wins(self, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes) -> pd.DataFrame:
+        return pd.read_csv(self.get_train_adllm_wins_path(dtype=dtype, wtype=wtype)).astype({
             "log": str, "lem_score": float, "binary_label": int,
         })
     
