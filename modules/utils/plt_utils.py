@@ -8,7 +8,7 @@ from typing import Tuple, Tuple
 def draw_label_distribution(
     labels: list[str],
     title: str = "Distribution of Labels", 
-    figsize: Tuple[int, int] = (6, 5),
+    figsize: None | Tuple[int, int] = None,
     horizontal: bool = False
 ) -> None:
     labels_len = len(labels)
@@ -20,7 +20,7 @@ def draw_label_distribution(
     count_list = [label_counter[label] for label in label_list]
     
     # 設定圖形大小
-    plt.figure(figsize=figsize)
+    plt.figure(figsize=(len(label_list) * 1.5, 5) if figsize is None else figsize)
     
     # 繪製柱狀圖
     if horizontal:
