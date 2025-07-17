@@ -1,0 +1,8 @@
+@startuml
+
+package "recorders" {
+    [HistoryRecorder]
+}
+
+
+@enduml

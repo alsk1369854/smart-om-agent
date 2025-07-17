@@ -1,0 +1,14 @@
+@startuml
+
+
+package "train_lem" {
+    [train_one_epoch]
+    [eval]
+    [train]
+[train] --> [train_one_epoch] : "Calls for each epoch"
+[train] --> [eval] : "Evaluates the model"
+}
+
+
+
+@enduml

@@ -8,8 +8,8 @@ from tqdm import tqdm
 from datetime import datetime
 from torch.utils.data import DataLoader
 from typing import Tuple
-from modules import models, configs, datasets, recorders, types
-from modules.utils import eval_utils, train_utils, plt_utils
+from modules import models, recorders, types
+from modules.utils import train_utils, plt_utils
 
 def train_one_epoch(
     *,
@@ -56,7 +56,7 @@ def train_one_epoch(
     
     optimizer.step()  # 更新權重
     optimizer.zero_grad()  # 重置梯度        
-    result = eval_utils.evaluate_binary_classifier(preds=all_preds, labels=all_labels)
+    result = train_utils.evaluate_binary_classifier(preds=all_preds, labels=all_labels)
     
     return result, total_loss / count
 
@@ -94,7 +94,7 @@ def eval(
             avg_loss = total_loss / count
             loop.set_postfix(loss=f"{avg_loss:.4f}")
 
-    result = eval_utils.evaluate_binary_classifier(preds=all_preds, labels=all_labels)
+    result = train_utils.evaluate_binary_classifier(preds=all_preds, labels=all_labels)
     return result, total_loss / count
 
 
@@ -169,7 +169,7 @@ def train(
         plt_utils.save_train_history_png(history_df, os.path.join(save_base, "history.png"))
 
         # 打印評估
-        eval_utils.print_evaluation_result(result=eval_result,  cm_labels=["Abnormal", "Normal"])
+        train_utils.print_evaluation_result(result=eval_result,  cm_labels=["Abnormal", "Normal"])
 
         scheduler.step()
         

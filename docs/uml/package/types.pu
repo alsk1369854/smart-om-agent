@@ -1,0 +1,18 @@
+@startuml
+
+
+package "types" {
+    [DatasetTypes]
+    [SlidingWindowTypes]
+    [SamplingTypes]
+    [BaseLLMTypes]
+    [EvaluationResult]
+    [AnomalyDetecteLLMSavePaths]
+    [LogEmbedModelSavePaths]
+    [DatasetConfig]
+    [WorkConfig]
+[WorkConfig] --> [DatasetConfig] : "Uses dataset config"
+}
+
+
+@enduml

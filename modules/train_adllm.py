@@ -6,7 +6,7 @@ from tqdm import tqdm
 from datetime import datetime
 from torch.utils.data import DataLoader
 from modules import models, recorders, types
-from modules.utils import eval_utils, plt_utils
+from modules.utils import train_utils, plt_utils
 
 def train_one_epoch(
     *,
@@ -68,7 +68,7 @@ def eval(
             all_preds += preds
             all_labels += targets
 
-    return eval_utils.evaluate_binary_classifier(preds=all_preds, labels=all_labels)
+    return train_utils.evaluate_binary_classifier(preds=all_preds, labels=all_labels)
 
 
 def train(
@@ -134,7 +134,7 @@ def train(
         plt_utils.save_train_history_png(history_df, os.path.join(save_base, "history.png"))
         
         # 打印評估
-        eval_utils.print_evaluation_result(result=eval_result,  cm_labels=["Abnormal", "Normal"])
+        train_utils.print_evaluation_result(result=eval_result,  cm_labels=["Abnormal", "Normal"])
 
         scheduler.step()
 

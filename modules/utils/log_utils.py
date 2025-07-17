@@ -2,7 +2,6 @@ import pandas as pd
 import re
 from typing import  Callable, Optional, Callable
 from tqdm import tqdm
-from .. import types
 
 LOG_REPLACE_PATTERN = "|".join([
     # Boolean：True / false
@@ -171,101 +170,4 @@ class LogDataFrameHelper:
             win_df["win_id"] = win_id
             win_dfs.append(win_df)
         return pd.concat(win_dfs, ignore_index=True)
-    
-    
-    
-    
-    
-    
-    # def get_train_adllm_wins_path(self, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes) -> str:
-    #     suffix = "_train_adllm_wins.csv"
-    #     suffix = f"_{wtype}" + suffix
-    #     suffix = f"_{dtype}" + suffix
-    #     return self.bast_log_path + suffix
-    
-    # def build_train_adllm_time_wins(
-    #     self,
-    #     semantic_logs_df: pd.DataFrame,
-    #     lem_score_map: dict[str, float],
-    #     win_size_secs: int,
-    #     win_step_secs: int,
-    # ) -> pd.DataFrame:
-    #     semantic_logs_df = semantic_logs_df.copy()
-    #     df = self.build_time_winds(semantic_logs_df, win_size_secs, win_step_secs)
-    #     df["binary_label"] = df["label"].apply(lambda x: 0 if x == "-" else 1)
-    #     df["lem_score"] = df["log"].apply(lambda x: lem_score_map[x])
-    #     # 預估總共需要幾個 window
-    #     win_dfs = []
-    #     for win_id, win_df in tqdm(df.groupby("win_id"), desc="Building train adllm time wins"):
-    #         win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
-    #         win_df["win_id"] = win_id
-    #         win_dfs.append(win_df)
-    #     df = pd.concat(win_dfs, ignore_index=True)
-    #     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
-    #     df.sort_values(by=["timestamp"], ascending=True, inplace=True)
-        
-        
-    #     start_time = df["timestamp"].min()
-    #     end_time = df["timestamp"].max()
-    #     total_seconds = (end_time - start_time).total_seconds()
-    #     total_windows = int(total_seconds // win_step_secs) + 1  
-    #     # 開始分割 window
-    #     current_time = start_time
-    #     win_dfs = []
-    #     for index in tqdm(range(total_windows), desc="Building time train wins"):
-    #         # 建立窗口區間
-    #         win_mask = (current_time <= semantic_logs_df["timestamp"]) & (semantic_logs_df["timestamp"] < (current_time + pd.Timedelta(seconds=win_size_secs)))
-    #         win_df = semantic_logs_df[win_mask].copy()
-    #         win_df["win_id"] = index
-    #         win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
-    #         win_dfs.append(win_df)
-    #         current_time += pd.Timedelta(seconds=win_step_secs)
-    #     return pd.concat(win_dfs, ignore_index=True)
-    
-
-
-    # def build_train_adllm_count_wins(
-    #     self,
-    #     logs_df: pd.DataFrame,
-    #     lem_score_map: dict[str, float],
-    #     win_size_logs: int,
-    #     win_step_logs: int,
-    # ) -> pd.DataFrame:
-    #     semantic_logs_df = semantic_logs_df.copy()
-    #     wins_df = self.build_count_wins(semantic_logs_df, win_size_logs, win_step_logs)
-    #     wins_df["binary_label"] = wins_df["label"].apply(lambda x: 0 if x == "-" else 1)
-    #     wins_df["lem_score"] = wins_df["log"].apply(lambda x: lem_score_map[x])
-
-    #     win_dfs = []
-    #     for win_id, win_df in tqdm(wins_df.groupby("win_id"), desc="Building train adllm count wins"):
-    #         win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
-    #         win_dfs.append(win_df)
-    #     return pd.concat(win_dfs, ignore_index=True)
-
-    #     # semantic_logs_df = semantic_logs_df.copy()
-    #     # semantic_logs_df["binary_label"] = semantic_logs_df["label"].apply(lambda x: 0 if x == "-" else 1)
-    #     # semantic_logs_df["lem_score"] = semantic_logs_df["log"].apply(lambda x: lem_score_map[x])
-    #     # semantic_logs_df["timestamp"] = pd.to_datetime(semantic_logs_df["timestamp"], unit="s")
-    #     # semantic_logs_df.sort_values(by=["timestamp"], ascending=True, inplace=True)
-    #     # # 預估總共需要幾個 window
-    #     # total_wins = int(len(semantic_logs_df) // win_step_semantic_logs) + 1  
-    #     # # 開始分割 window
-    #     # current_index = 0
-    #     # win_dfs = []
-    #     # for index in tqdm(range(total_wins), desc="Building count train wins"):
-    #     #     # 建立窗口區間
-    #     #     win_df = semantic_logs_df.iloc[current_index:current_index + win_size_semantic_logs].copy()
-    #     #     win_df["win_id"] = index
-    #     #     win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
-    #     #     win_dfs.append(win_df)
-    #     #     current_index += win_step_semantic_logs
-    #     # return pd.concat(win_dfs, ignore_index=True)
-
-    # def save_train_adllm_wins(self, df: pd.DataFrame, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes):
-    #     df.to_csv(self.get_train_adllm_wins_path(dtype, wtype), index=False, chunksize=10000)
-    
-    # def load_train_adllm_wins(self, dtype: types.WinDatasetTypes, wtype: types.SlidingWindowTypes) -> pd.DataFrame:
-    #     return pd.read_csv(self.get_train_adllm_wins_path(dtype=dtype, wtype=wtype)).astype({
-    #         "log": str, "lem_score": float, "binary_label": int,
-    #     })
     

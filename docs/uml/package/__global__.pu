@@ -1,0 +1,130 @@
+@startuml
+left to right direction
+
+package "modules" {
+
+package "types" {
+    [DatasetTypes]
+    [SlidingWindowTypes]
+    [SamplingTypes]
+    [BaseLLMTypes]
+    [EvaluationResult]
+    [AnomalyDetecteLLMSavePaths]
+    [LogEmbedModelSavePaths]
+    [DatasetConfig]
+    [WorkConfig]
+[WorkConfig] --> [DatasetConfig] : "Uses dataset config"
+}
+
+package "train_lem" {
+    [train_one_epoch(train_lem)]
+    [eval(train_lem)]
+    [train(train_lem)]
+[train(train_lem)] --> [train_one_epoch(train_lem)] : "Calls for each epoch"
+[train(train_lem)] --> [eval(train_lem)] : "Evaluates the model"
+}
+
+package "train_adllm" {
+    [train_one_epoch(train_adllm)]
+    [eval(train_adllm)]
+    [train(train_adllm)]
+[train(train_adllm)] --> [train_one_epoch(train_adllm)] : "Calls for each epoch"
+[train(train_adllm)] --> [eval(train_adllm)] : "Evaluates the model"
+}
+package "recorders" {
+    [HistoryRecorder]
+}
+package "prompts" {
+    [ANOMALY_DETECTE_LLM_PREFIX_INSTRUCTION_TEMPLATE]
+    [ANOMALY_DETECTE_LLM_SUFFIX_INSTRUCTION]
+}
+package "models" {
+    [LogEmbedModel]
+    [AnomalyDetectLLM]
+}
+package "environments" {
+    [TRAIN_RATIO]
+    [RANDOM_STATE]
+}
+package "datasets" {
+    [LogDataset]
+    [LogWindowDataset]
+}
+package "configs" {
+    [BGL_WORK_CONFIG]
+    [LIBERTY_WORK_CONFIG]
+    [THUNDERBIRD_WORK_CONFIG]
+    [TEST_WORK_CONFIG]
+    [WORK_CONFIG_MAP]
+[WORK_CONFIG_MAP] --> [BGL_WORK_CONFIG]
+[WORK_CONFIG_MAP] --> [LIBERTY_WORK_CONFIG]
+[WORK_CONFIG_MAP] --> [THUNDERBIRD_WORK_CONFIG]
+[WORK_CONFIG_MAP] --> [TEST_WORK_CONFIG]
+}
+package "agents" {
+    [SmartOperationAndMaintenanceAgent]
+}
+
+package "utils" {
+package "train_utils" {
+    [apply_label_smoothing_binary]
+    [parse_train_adllm_wins_df_to_train_case]
+    [print_log_embed_model_training_info]
+    [print_anomaly_detection_llm_training_info]
+    [evaluate_binary_classifier]
+    [print_evaluation_result]
+}
+package "samp_utils" {
+    [minority_oversampling]
+    [logllm_minority_oversampling]
+    [train_test_sampling]
+    [logllm_train_test_sampling]
+}
+package "plt_utils" {
+    [draw_label_distribution]
+    [set_epoch_loss_plot]
+    [set_epoch_eval_metrics_plot]
+    [set_confusion_matrix_plot]
+    [set_computational_cost_plot]
+    [get_train_history_png]
+    [save_train_history_png]
+    
+[save_train_history_png] --> [get_train_history_png]
+[get_train_history_png] --> [set_epoch_loss_plot]
+[get_train_history_png] --> [set_epoch_eval_metrics_plot]
+[get_train_history_png] --> [set_confusion_matrix_plot]
+[get_train_history_png] --> [set_computational_cost_plot]
+}
+
+package "model_utils" {
+    [print_trainable_parameters]
+}
+package "log_utils" {
+    [LOG_REPLACE_REGEX]
+    [DOTS_REGEX]
+    [log_regex_replase]
+    [LogDataFrameHelper]
+[log_regex_replase] --> [LOG_REPLACE_REGEX]
+[log_regex_replase] --> [DOTS_REGEX]
+}
+}
+
+"train_lem" --> "models" : "Uses models for training"
+"train_lem" --> "recorders" : "Uses recorders for logging"
+"train_lem" --> "types" : "Uses types for configurations"
+"train_lem" --> "train_utils" : "Uses train utilities for training"
+"train_lem" --> "plt_utils" : "Uses Plotting utilities to visualize training history"
+"train_adllm" --> "models" : "Uses models for training"
+"train_adllm" --> "recorders" : "Uses recorders for logging"
+"train_adllm" --> "types" : "Uses types for configurations"
+"train_adllm" --> "train_utils" : "Uses train utilities for training"
+"train_adllm" --> "plt_utils" : "Uses Plotting utilities to visualize training history"
+"models" --> "types" : "Uses types for configurations"
+"models" --> "prompts" : "Uses prompts for model instructions"
+"agents" --> "models" : "Uses models for agent functionalities"
+"agents" --> "log_utils" : "Uses log utilities for semantic extraction"
+"train_utils" --> "types" : "Uses types for configurations"
+"samp_utils" --> "environments" : "Uses environment configurations"
+}
+
+@enduml

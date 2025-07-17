@@ -1,0 +1,8 @@
+@startuml
+
+
+package "model_utils" {
+    [print_trainable_parameters]
+}
+
+@enduml

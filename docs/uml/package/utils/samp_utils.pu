@@ -1,0 +1,10 @@
+@startuml
+
+package "samp_utils" {
+    [minority_oversampling]
+    [logllm_minority_oversampling]
+    [train_test_sampling]
+    [logllm_train_test_sampling]
+}
+
+@enduml

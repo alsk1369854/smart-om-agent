@@ -1,0 +1,7 @@
+@startuml
+
+package "agents" {
+    [SmartOperationAndMaintenanceAgent]
+}
+
+@enduml

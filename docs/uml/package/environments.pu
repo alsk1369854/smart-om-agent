@@ -1,0 +1,9 @@
+@startuml
+
+
+package "environments" {
+    [TRAIN_RATIO]
+    [RANDOM_STATE]
+}
+
+@enduml

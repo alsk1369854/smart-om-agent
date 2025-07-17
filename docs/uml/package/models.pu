@@ -1,0 +1,9 @@
+@startuml
+
+
+package "models" {
+    [LogEmbedModel]
+    [AnomalyDetectLLM]
+}
+
+@enduml

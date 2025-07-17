@@ -1,0 +1,8 @@
+@startuml
+
+package "prompts" {
+    [ANOMALY_DETECTE_LLM_PREFIX_INSTRUCTION_TEMPLATE]
+    [ANOMALY_DETECTE_LLM_SUFFIX_INSTRUCTION]
+}
+
+@enduml

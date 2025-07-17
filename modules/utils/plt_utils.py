@@ -9,7 +9,6 @@ def draw_label_distribution(
     labels: list[str],
     title: str = "Distribution of Labels", 
     figsize: None | Tuple[int, int] = None,
-    horizontal: bool = False
 ) -> None:
     labels_len = len(labels)
     # 計算 Label 欄位的分佈
@@ -21,76 +20,22 @@ def draw_label_distribution(
     
     # 設定圖形大小
     plt.figure(figsize=(len(label_list) * 1.5, 5) if figsize is None else figsize)
-    
-    # 繪製柱狀圖
-    if horizontal:
-        plt.barh(label_list, count_list, color="skyblue")
-        # 在 bar 上方標示數值
-        for i, count in enumerate(count_list):
-            plt.text(count + max(count_list) * 0.01, i, f"{str(count)}({count / labels_len * 100:.1f}%)", 
-                        va='center', fontsize=8)
-        plt.title(title, fontsize=14)
-        plt.xlabel("Count", fontsize=12)
-        plt.ylabel("Label", fontsize=12)
-        plt.ylim(-0.5, len(count_list) - 0.5)  # 確保 x 軸範圍適配所有標籤
-        plt.tight_layout()
-        plt.show()
-        
-    else:
-        plt.bar(label_list, count_list, color="skyblue")
+    plt.bar(label_list, count_list, color="skyblue")
 
-        # 在 bar 上方標示數值
-        for i, count in enumerate(count_list):
-            plt.text(i, count + max(count_list) * 0.01, f"{str(count)}({count / labels_len * 100:.1f}%)", 
-                        ha='center', va='bottom', fontsize=8)
-
-        # 添加標題與標籤
-        plt.title(title, fontsize=14)
-        plt.xlabel("Label", fontsize=12)
-        plt.ylabel("Count", fontsize=12)
-
-        plt.xlim(-0.5, len(label_list) - 0.5)  # 確保 x 軸範圍適配所有標籤
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-        plt.show()
-    
-    
-def set_label_distribution_plot(
-    ax: plt.Axes, 
-    labels: list[str],
-    title: str = "Label Distribution"
-) -> None:
-    labels_len = len(labels)
-    label_counter = Counter(labels)
-    label_list = list(label_counter.keys())
-    label_list.sort()
-    count_list = [label_counter[label] for label in label_list]
-    
-    # 設定圖形大小
-    ax.bar(label_list, count_list, color="skyblue")
+    # 在 bar 上方標示數值
     for i, count in enumerate(count_list):
-        ax.text(i, count + max(count_list) * 0.01, f"{str(count)}\n({count / labels_len * 100:.1f}%)", 
-            ha='center', va='bottom', fontsize=8)
+        plt.text(i, count + max(count_list) * 0.01, f"{str(count)}({count / labels_len * 100:.1f}%)", 
+                    ha='center', va='bottom', fontsize=8)
 
-        # 添加標題與標籤
-    ax.set_title(title, fontsize=14)
-    ax.set_xlabel("Label", fontsize=12)
-    ax.set_ylabel("Count", fontsize=12)
-    ax.set_xlim(-0.5, len(label_list) - 0.5)
-    ax.set_ylim(0, max(count_list) + 0.1 * max(count_list))
-    # ax.set_xticks(rotation=45)
-    # 設定標籤旋轉角度
-    ax.tick_params(axis='x', rotation=45)
-    # ax.tick_params(axis='y', rotation=0)
-    
-    # # Loss vs Epoch
-    # color = "tab:red"
-    # ax.plot(epoch_data, loss_data, marker="o", color=color, linestyle='-', label="Loss")
-    # ax.set_title(title)
-    # ax.set_xlabel("Epoch")
-    # ax.set_ylabel("Loss")
-    # ax.legend()
-    # ax.grid(True)
+    # 添加標題與標籤
+    plt.title(title, fontsize=14)
+    plt.xlabel("Label", fontsize=12)
+    plt.ylabel("Count", fontsize=12)
+
+    plt.xlim(-0.5, len(label_list) - 0.5)  # 確保 x 軸範圍適配所有標籤
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
     
 
 def set_epoch_loss_plot(ax: plt.Axes, epoch_data: list[int], loss_data: list[float], title: str = "Train Loss vs Epoch") -> None:

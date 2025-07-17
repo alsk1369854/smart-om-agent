@@ -93,8 +93,8 @@ def logllm_minority_oversampling(
 
 def train_test_sampling(
     df: pd.DataFrame, 
-    train_ratio: float, 
     label_column: str = "label",
+    train_ratio: float = environments.TRAIN_RATIO, 
     random_state: int = environments.RANDOM_STATE,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     df_len = len(df)
@@ -121,9 +121,9 @@ def train_test_sampling(
 
 def logllm_train_test_sampling(
     df: pd.DataFrame,
-    train_ratio: float,
+    train_ratio: float = environments.TRAIN_RATIO,
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
-    train_len = int(len(df) * environments.TRAIN_RATIO)
+    train_len = int(len(df) * train_ratio)
     train_logllm_logs_df = df[:train_len]
     test_logllm_logs_df = df[train_len:].reset_index(drop=True)
     return train_logllm_logs_df, test_logllm_logs_df

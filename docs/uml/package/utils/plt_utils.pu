@@ -1,0 +1,21 @@
+@startuml
+
+package "plt_utils" {
+    [draw_label_distribution]
+    [set_epoch_loss_plot]
+    [set_epoch_eval_metrics_plot]
+    [set_confusion_matrix_plot]
+    [set_computational_cost_plot]
+    [get_train_history_png]
+    [save_train_history_png]
+    
+[save_train_history_png] --> [get_train_history_png]
+[get_train_history_png] --> [set_epoch_loss_plot]
+[get_train_history_png] --> [set_epoch_eval_metrics_plot]
+[get_train_history_png] --> [set_confusion_matrix_plot]
+[get_train_history_png] --> [set_computational_cost_plot]
+}
+
+
+
+@enduml

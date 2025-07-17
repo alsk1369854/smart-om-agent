@@ -1,0 +1,13 @@
+@startuml
+
+
+package "train_utils" {
+    [apply_label_smoothing_binary]
+    [parse_train_adllm_wins_df_to_train_case]
+    [print_log_embed_model_training_info]
+    [print_anomaly_detection_llm_training_info]
+    [evaluate_binary_classifier]
+    [print_evaluation_result]
+}
+
+@enduml

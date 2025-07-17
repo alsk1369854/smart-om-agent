@@ -1,0 +1,9 @@
+@startuml
+
+
+package "datasets" {
+    [LogDataset]
+    [LogWindowDataset]
+}
+
+@enduml
