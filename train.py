@@ -1,6 +1,7 @@
 
 import torch
 import gc
+import functools
 from torch.utils.data import DataLoader
 from modules import configs, environments, models, datasets, train_lem, types, trainers
 from modules.utils import log_utils, samp_utils, train_utils
@@ -11,7 +12,7 @@ def get_log_feature_vector_map(
     logs: list[str],
 ) -> dict[str, float]:
     logs = list(set(logs))
-    log_embed_model = models.LogEmbedModel.from_pretrained(path=f"./output/{case_name}/lem/best")
+    log_embed_model = models.LogEmbedModel.from_pretrained(save_path=f"./output/{case_name}/lem/best")
     batch_size: int = 256
     
     log_vector_map = {}
@@ -54,7 +55,7 @@ def stage_one_train(
     micro_batch_size = min(safe_batch_size, batch_size)
     gradient_accumulation_steps = batch_size // micro_batch_size
     train_utils.print_log_embed_model_training_info(
-        case_name=case_name,
+        train_case_name=case_name,
         epochs=epochs,
         lr=lr,
         batch_size=batch_size,
@@ -118,7 +119,7 @@ def stage_two_train(
     micro_batch_size = min(safe_batch_size, batch_size)
     gradient_accumulation_steps = batch_size // micro_batch_size
     train_utils.print_anomaly_detection_llm_training_info(
-        case_name=case_name,
+        train_case_name=case_name,
         base_llm_name=base_llm_name,
         win_type=sliding_window_type,
         epochs=epochs,
@@ -168,16 +169,28 @@ def main():
     # - Anomaly Detection LLM: ./output/{CASE_NAME}/adllm/
     
     # ===== Start of settings =====
+    # Smart O&M Agent Train settings
     CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
     DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
     SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
     SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
-    BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    BASE_LLM: types.BaseLLMTypes = "Llama-3.2-3B-Instruct" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    
+    # stage one training settings
+    LEM_TRAIN_EPOCHS: int = 10 # Log Embed Model training epochs
+    LEM_TRAIN_LR: float = 5e-5 # Log Embed Model learning rate
+    LEM_SAFE_BATCH_SIZE: int = 256 # Log Embed Model safe batch size
+    
+    # stage two training settings
+    ADLLM_TRAIN_EPOCHS: int = 5 # Anomaly Detection LLM training epochs
+    ADLLM_TRAIN_LR: float = 5e-5 # Anomaly Detection LLM learning rate
+    ADLLM_SAFE_BATCH_SIZE: int = 3 # Anomaly Detection LLM safe GPU single batch memory usage
+    ADLLM_TOP_K_LOGS: int = 5 # Anomaly Detection LLM top K abnormal logs for each window
     # ===== End of settings =====
     
     # Prepare training data
     work_config = configs.WORK_CONFIG_MAP[DATASET_TYPE]
-    ldfh = log_utils.LogDataFrameHelper(work_config.dataset_config.path)
+    ldfh = log_utils.LogDataFrameHelper()
     
     # Build structured logs
     struct_logs_df = ldfh.build_struct_logs(
@@ -192,13 +205,13 @@ def main():
     logs_df = ldfh.build_semantic_logs(
         struct_logs_df=struct_logs_df,
         feature_columns=work_config.dataset_config.feat_columns,
-        log_regex_replase_fn=log_utils.log_regex_replase,
+        log_regex_replace_func=log_utils.log_regex_replase,
     )
     ldfh.save_to_csv(logs_df, f"{work_config.dataset_config.path}-semantic-logs.csv")
     
     # Split training and testing logs
     sampling_fn = samp_utils.train_test_sampling if SAMPLING_TYPE == "our" else samp_utils.logllm_train_test_sampling
-    train_logs_df, test_logs_df = sampling_fn(logs_df, environments.TRAIN_RATIO)
+    train_logs_df, test_logs_df = sampling_fn(df=logs_df, train_ratio=environments.TRAIN_RATIO)
     
     # ===== Stage one training =====
     train_unique_logs_df = train_logs_df.drop_duplicates(subset=["log", "label"], inplace=False)
@@ -211,7 +224,7 @@ def main():
     # Train Log Embed Model
     stage_one_train(
         case_name=CASE_NAME, 
-        epochs=10, lr=5e-5, safe_batch_size=256,
+        epochs=LEM_TRAIN_EPOCHS, lr=LEM_TRAIN_LR, safe_batch_size=LEM_SAFE_BATCH_SIZE,
         train_cases=(train_unique_logs, train_unique_logs_labels),
         test_cases=(test_unique_logs, test_unique_logs_labels),
     )
@@ -236,7 +249,8 @@ def main():
     # Train Anomaly Detection LLM
     stage_two_train(
         case_name=CASE_NAME,
-        epochs=5, lr=5e-5, safe_batch_size=3, top_k_logs=5,
+        epochs=ADLLM_TRAIN_EPOCHS, lr=ADLLM_TRAIN_LR, safe_batch_size=ADLLM_SAFE_BATCH_SIZE,
+        top_k_logs=ADLLM_TOP_K_LOGS,
         train_cases=(train_wins, train_wins_label),
         test_cases=(test_wins, test_wins_label),
         base_llm_name=BASE_LLM,

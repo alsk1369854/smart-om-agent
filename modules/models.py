@@ -251,12 +251,12 @@ class AnomalyDetectionLLM(nn.Module):
 
         return self.llm(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    def save_pretrained(self, *, save_path: str) -> None:
+    def save_pretrained(self, save_path: str) -> None:
         os.makedirs(save_path, exist_ok=True)
         save_paths = self._get_save_paths(save_path)
         self.llm.save_pretrained(save_paths.lora)
 
-    def set_system_name_and_field_names(self, *, system_name: str | None, field_names: str) -> None:
+    def set_system_name_and_field_names(self, system_name: str | None, field_names: str) -> None:
         prefix_prompt = prompts.ANOMALY_DETECTION_LLM_PREFIX_INSTRUCTION_TEMPLATE.format(
             system_name="" if system_name is None else f" {system_name} ",
             field_names=field_names

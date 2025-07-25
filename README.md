@@ -47,6 +47,7 @@ Benchmark datasets used in the experiments.
 ### 2. Install dependencies
 ```bash
 pip install transformers bitsandbytes peft pandas torch scikit-learn pydantic matplotlib langgraph seaborn
+pip install -U "huggingface_hub[cli]"
 ```
 
 ### 3. Two-stage training of **Smart O&M Agent**
@@ -54,14 +55,29 @@ The training results will be stored in `./output/{CASE_NAME}`
 
 - Set the following variations in train.py
     ```bash
+    # Smart O&M Agent Train settings
     CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
-    DATASET_TYPE: types.DatasetTypes = "BGL" # "BGL" | "Liberty" | "Thunderbird"
+    DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
     SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
     SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
-    BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    BASE_LLM: types.BaseLLMTypes = "Llama-3.2-3B-Instruct" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    
+    # stage one training settings
+    LEM_TRAIN_EPOCHS: int = 10 # Log Embed Model training epochs
+    LEM_TRAIN_LR: float = 5e-5 # Log Embed Model learning rate
+    LEM_SAFE_BATCH_SIZE: int = 256 # Log Embed Model safe batch size
+    
+    # stage two training settings
+    ADLLM_TRAIN_EPOCHS: int = 5 # Anomaly Detection LLM training epochs
+    ADLLM_TRAIN_LR: float = 5e-5 # Anomaly Detection LLM learning rate
+    ADLLM_SAFE_BATCH_SIZE: int = 3 # Anomaly Detection LLM safe GPU single batch memory usage
+    ADLLM_TOP_K_LOGS: int = 5 # Anomaly Detection LLM top K abnormal logs for each window
     ```
 
 - Run python `train.py` from the root directory to get trained models.
+    ```bash
+    python train.py
+    ```
 
 ### 4. Used for system anomaly detection
 ```bash
@@ -100,8 +116,6 @@ mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L http://0b4af6cdc2f0c5998459-c0245c5
 
 ## 1. Login Huggingface
 ```bash
-pip install -U "huggingface_hub[cli]"
-
 export HF_TOKEN=<your-huggingface-token>
 huggingface-cli login --token ${HF_TOKEN}
 ```

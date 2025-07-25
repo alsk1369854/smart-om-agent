@@ -59,7 +59,7 @@ class AnomalyDetectionLLMTrainer:
             # 存儲最好的模型
             if eval_result.f1 > best_f1:
                 best_f1 = eval_result.f1
-                adllm.save_pretrained(path=os.path.join(save_base, "best"))
+                adllm.save_pretrained(os.path.join(save_base, "best"))
 
             # 紀錄日誌
             record_dict = {
@@ -201,7 +201,7 @@ class LogEmbedModelTrainer:
             # 存儲最好的模型
             if eval_result.f1 > best_f1:
                 best_f1 = eval_result.f1
-                lem.save_pretrained(path=os.path.join(save_base, "best"))
+                lem.save_pretrained(os.path.join(save_base, "best"))
 
             # 紀錄日誌
             record_dict = {
