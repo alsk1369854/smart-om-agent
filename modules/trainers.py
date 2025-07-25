@@ -238,7 +238,7 @@ class LogEmbedModelTrainer:
         optimizer: torch.optim.AdamW,
         loss_fn: nn.BCEWithLogitsLoss,
         smoothing: float,
-    ) -> Tuple[types.EvaluationResult, float]:
+    ) -> tuple[types.EvaluationResult, float]:
         lem.train()
         total_loss, count, step = 0, 0, 0
         all_preds, all_labels = [], []

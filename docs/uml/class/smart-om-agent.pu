@@ -6,7 +6,35 @@ left to right direction
 skinparam linetype ortho
 ' skinparam linetype polyline
 
+
 package "modules" {
+    package "configs" {
+        stereotype WORK_CONFIG_MAP {
+            ["BGL"]: BGL_WORK_CONFIG,
+            ["Liberty"]: LIBERTY_WORK_CONFIG,
+            ["Thunderbird"]: THUNDERBIRD_WORK_CONFIG,
+            ["test"]: TEST_WORK_CONFIG,
+        }
+    }
+
+    package "utils" {
+        package "log_utils" {
+            class LogDataFrameHelper {
+                + {static} LogDataFrameHelper(): Self
+                + save_to_csv(df: pd.DataFrame, path: str): None
+                + build_struct_logs(log_path: str, log_format: str, start_line: int, end_line: int | None): pd.DataFrame
+                + load_struct_logs(path: str): pd.DataFrame
+                + build_semantic_logs(struct_logs_df: pd.DataFrame, feature_columns: list[str], log_regex_replace_func: Callable[[str], str]): pd.DataFrame
+                + load_semantic_logs(path: str): pd.DataFrame
+                + build_count_wins(df: pd.DataFrame, win_size_logs: int, win_step_logs: int): pd.DataFrame
+                + build_time_wind(df: pd.DataFrame, win_size_secs: int, win_step_secs: int): pd.DataFrame
+                + load_wins(path: str): pd.DataFrame
+                + build_train_adllm_wins(win_df: pd.DataFrame, log_feature_vector_map: dict[str, float]): pd.DataFrame
+                + load_train_adllm_wins(path: str): pd.DataFrame
+            }
+        }
+    }
+
     package "agents" {
         class SmartOperationAndMaintenanceAgent {
             + {static} TOP_K_ABNORMAL_LOGS: int
@@ -60,56 +88,24 @@ package "modules" {
         }
     }
 
-    package "configs" {
-        stereotype WORK_CONFIG_MAP {
-            ["BGL"]: BGL_WORK_CONFIG,
-            ["Liberty"]: LIBERTY_WORK_CONFIG,
-            ["Thunderbird"]: THUNDERBIRD_WORK_CONFIG,
-            ["test"]: TEST_WORK_CONFIG,
-        }
-    }
-
     package "trainers" {
-    }
+        class AnomalyDetectionLLMTrainer {
+            + {static} train(adllm: AnomalyDetectionLLM, epochs: int, lr: float, gradient_accumulation_steps: int, train_loader: DataLoader, test_loader: DataLoader, top_k_logs: int, save_base: str): None
+            + {static} train_one_epoch(adllm: AnomalyDetectionLLM, train_loader: DataLoader, gradient_accumulation_steps: int, optimizer: torch.optim.AdamW, top_k_logs: int): float
+            + {static} eval(adllm: AnomalyDetectionLLM, test_loader: DataLoader, top_k_logs: int): EvaluationResult
+        }
 
-    class train_adllm {}
-
-    ' package "train_adllm" {
-'         def train(
-'     *,
-'     adllm: models.AnomalyDetectionLLM,
-'     epochs: int,
-'     lr: float,
-'     gradient_accumulation_steps: int,
-'     train_loader: DataLoader, 
-'     test_loader: DataLoader,
-'     top_k_logs: int,
-'     save_base: str,
-' ) -> None:
-    ' }
-    package "train_lem" {}
-
-    package "utils" {
-        package "log_utils" {
-            class LogDataFrameHelper {
-                + {static} LogDataFrameHelper(): Self
-                + save_to_csv(df: pd.DataFrame, path: str): None
-                + build_struct_logs(log_path: str, log_format: str, start_line: int, end_line: int | None): pd.DataFrame
-                + load_struct_logs(path: str): pd.DataFrame
-                + build_semantic_logs(struct_logs_df: pd.DataFrame, feature_columns: list[str], log_regex_replace_func: Callable[[str], str]): pd.DataFrame
-                + load_semantic_logs(path: str): pd.DataFrame
-                + build_count_wins(df: pd.DataFrame, win_size_logs: int, win_step_logs: int): pd.DataFrame
-                + build_time_wind(df: pd.DataFrame, win_size_secs: int, win_step_secs: int): pd.DataFrame
-                + load_wins(path: str): pd.DataFrame
-                + build_train_adllm_wins(win_df: pd.DataFrame, log_feature_vector_map: dict[str, float]): pd.DataFrame
-                + load_train_adllm_wins(path: str): pd.DataFrame
-            }
+        class LogEmbedModelTrainer {
+            + {static} train(lem: LogEmbedModel, epochs: int, lr: float, gradient_accumulation_steps: int, train_loader: DataLoader, test_loader: DataLoader, save_base: str): None
+            + {static} train_one_epoch(lem: LogEmbedModel, train_loader: DataLoader, gradient_accumulation_steps: int, optimizer: torch.optim.AdamW, loss_fn: nn.BCEWithLogitsLoss, smoothing: float): tuple[EvaluationResult, float]
+            + {static} eval(lem: LogEmbedModel, test_loader: DataLoader, loss_fn: nn.BCEWithLogitsLoss, smoothing: float): tuple[EvaluationResult, float]
         }
     }
+
 }
 
 SmartOperationAndMaintenanceAgent --> LogEmbedModel
 SmartOperationAndMaintenanceAgent --> AnomalyDetectionLLM
-train_adllm ..> AnomalyDetectionLLM
-train_lem ..> LogEmbedModel
+AnomalyDetectionLLMTrainer ..> AnomalyDetectionLLM
+LogEmbedModelTrainer ..> LogEmbedModel
 @enduml
