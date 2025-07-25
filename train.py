@@ -42,16 +42,16 @@ def stage_one_train(
     
     # Oversamping
     oversamp_beta = 1 / (len(set(train_labels)) - 1)
-    train_logs_oversmap, train_labels_oversmap = samp_utils.minority_oversampling(
+    train_logs_oversamp, train_labels_oversamp = samp_utils.minority_oversampling(
         x=train_logs, y=train_labels, beta=oversamp_beta,
     )
-    train_labels_oversmap = [0 if x == "-" else 1 for x in train_labels_oversmap]
+    train_labels_oversamp = [0 if x == "-" else 1 for x in train_labels_oversamp]
     test_labels = [0 if x == "-" else 1 for x in test_labels]
-    train_dataset = datasets.LogDataset(logs=train_logs_oversmap, labels=train_labels_oversmap)
+    train_dataset = datasets.LogDataset(logs=train_logs_oversamp, labels=train_labels_oversamp)
     test_dataset = datasets.LogDataset(logs=test_logs, labels=test_labels)
     
     # Train setting
-    batch_size = max(1, int(len(train_labels_oversmap) * 0.005))
+    batch_size = max(1, int(len(train_labels_oversamp) * 0.005))
     micro_batch_size = min(safe_batch_size, batch_size)
     gradient_accumulation_steps = batch_size // micro_batch_size
     train_utils.print_log_embed_model_training_info(
@@ -60,7 +60,7 @@ def stage_one_train(
         lr=lr,
         batch_size=batch_size,
         oversamp_beta=oversamp_beta,
-        train_labels=train_labels_oversmap,
+        train_labels=train_labels_oversamp,
     )
     
     # New Log Embed Model
@@ -106,16 +106,16 @@ def stage_two_train(
     train_wins, train_wins_label = train_cases
     test_wins, test_wins_label = test_cases
     
-    # Oversamping
+    # Oversampling
     oversamp_beta = 1
-    train_wins_oversampe, train_labels_oversampe = samp_utils.minority_oversampling(
+    train_wins_oversamp, train_labels_oversamp = samp_utils.minority_oversampling(
         x=train_wins, y=train_wins_label, beta=oversamp_beta, 
     )
-    train_dataset = datasets.LogWindowDataset(log_wins=train_wins_oversampe, labels=train_labels_oversampe)
+    train_dataset = datasets.LogWindowDataset(log_wins=train_wins_oversamp, labels=train_labels_oversamp)
     test_dataset = datasets.LogWindowDataset(log_wins=test_wins, labels=test_wins_label)
     
     # Train setting
-    batch_size = max(1, int(len(train_labels_oversampe) * 0.005))
+    batch_size = max(1, int(len(train_labels_oversamp) * 0.005))
     micro_batch_size = min(safe_batch_size, batch_size)
     gradient_accumulation_steps = batch_size // micro_batch_size
     train_utils.print_anomaly_detection_llm_training_info(
@@ -127,7 +127,7 @@ def stage_two_train(
         top_k_logs=top_k_logs,
         batch_size=batch_size,
         oversamp_beta=oversamp_beta,
-        train_labels=train_labels_oversampe,
+        train_labels=train_labels_oversamp,
     )
     
     # New Anomaly Detection LLM
@@ -205,7 +205,7 @@ def main():
     logs_df = ldfh.build_semantic_logs(
         struct_logs_df=struct_logs_df,
         feature_columns=work_config.dataset_config.feat_columns,
-        log_regex_replace_func=log_utils.log_regex_replase,
+        log_regex_replace_func=log_utils.log_regex_replace,
     )
     ldfh.save_to_csv(logs_df, f"{work_config.dataset_config.path}-semantic-logs.csv")
     

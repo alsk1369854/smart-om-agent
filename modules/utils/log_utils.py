@@ -39,7 +39,7 @@ LOG_REPLACE_PATTERN = "|".join([
 ])
 LOG_REPLACE_REGEX = re.compile(LOG_REPLACE_PATTERN)
 DOTS_REGEX = re.compile(r"[\.]{3,}")
-def log_regex_replase(log: str) -> str:
+def log_regex_replace(log: str) -> str:
     log = re.sub(DOTS_REGEX, ".. ", log)   # Replace multiple "." with ".. "
     log = re.sub(LOG_REPLACE_PATTERN, "<*>", log)
     return log
@@ -58,6 +58,8 @@ class LogDataFrameHelper:
         start_line: int = 0,
         end_line: Optional[int] = None,
     ) -> pd.DataFrame:
+        end_line = end_line if end_line is not None else float("inf")
+        
         columns = log_format.split(" ")
         columns = [f.strip("<>") for f in columns]
         columns_len = len(columns)

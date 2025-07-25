@@ -57,10 +57,10 @@ The training results will be stored in `./output/{CASE_NAME}`
     ```bash
     # Smart O&M Agent Train settings
     CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
-    DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
+    DATASET_TYPE: types.DatasetTypes = "BGL" # "BGL" | "Liberty" | "Thunderbird" | "test"(based BGL)
     SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
     SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
-    BASE_LLM: types.BaseLLMTypes = "Llama-3.2-3B-Instruct" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
     
     # stage one training settings
     LEM_TRAIN_EPOCHS: int = 10 # Log Embed Model training epochs
@@ -78,6 +78,8 @@ The training results will be stored in `./output/{CASE_NAME}`
     ```bash
     python train.py
     ```
+
+- Run Jupyter `metrics.ipynb` from the root directory to view `<CASE_NAME>` training history
 
 ### 4. Used for system anomaly detection
 ```bash
