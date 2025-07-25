@@ -12,11 +12,11 @@ class SmartOperationAndMaintenanceAgent():
         self, *,
         lem: models.LogEmbedModel,
         adllm: models.AnomalyDetectionLLM,
-        log_regx_replace_func: Callable[[str], str] = log_utils.log_regx_replase,
+        log_regex_replace_func: Callable[[str], str] = log_utils.log_regx_replase,
     ):
         self.lem = lem
         self.adllm = adllm
-        self.log_regx_replace_func = log_regx_replace_func
+        self.log_regex_replace_func = log_regex_replace_func
         self.graph = self._build_graph()
 
     def _build_graph(self):
@@ -27,7 +27,7 @@ class SmartOperationAndMaintenanceAgent():
 
         def log_semantic_extraction_node(state: State):
             logs = state.logs
-            logs = [self.log_regx_replace_func(log) for log in logs]
+            logs = [self.log_regex_replace_func(log) for log in logs]
             return { "logs": logs }     
 
         def remove_duplicate_semantics_node(state: State):

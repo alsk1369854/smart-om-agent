@@ -91,10 +91,9 @@ mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L http://0b4af6cdc2f0c5998459-c0245c5
 ## 1. Login Huggingface
 ```bash
 pip install -U "huggingface_hub[cli]"
-pip install huggingface_hub[hf_xet]
 
 export HF_TOKEN=<your-huggingface-token>
-huggingface-cli login --token ${HF_TOKEN} --add-to-git-credential
+huggingface-cli login --token ${HF_TOKEN}
 ```
 
 ## [BERT](https://huggingface.co/google-bert/bert-base-uncased)
