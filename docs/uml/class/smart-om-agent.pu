@@ -65,6 +65,10 @@ package "modules" {
             class LogDataFrameHelper {
                 + {static} LogDataFrameHelper(): Self
                 + save_to_csv(df: pd.DataFrame, path: str): None
+                + build_struct_logs(log_path: str, log_format: str, start_line: int, end_line: int | None): pd.DataFrame
+                + load_struct_logs(path: str): pd.DataFrame
+                + build_semantic_logs(struct_logs_df: pd.DataFrame, feature_columns: list[str], log_regex_replace_func: Callable[[str], str]): pd.DataFrame
+                + load_semantic_logs(path: str): pd.DataFrame
             }
         }
     }

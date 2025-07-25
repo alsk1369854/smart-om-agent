@@ -50,9 +50,6 @@ class LogDataFrameHelper:
 
     def save_to_csv(self, df: pd.DataFrame, path: str) -> None: 
         df.to_csv(path, index=False, chunksize=10000)
-        
-    def load_struct_logs(self, path: str) -> pd.DataFrame:
-        return pd.read_csv(path)
     
     def build_struct_logs(
         self,
@@ -81,27 +78,27 @@ class LogDataFrameHelper:
                 data.append(struct_line)
         return pd.DataFrame(data, columns=columns)
     
+    def load_struct_logs(self, path: str) -> pd.DataFrame:
+        return pd.read_csv(path)
+    
     def build_semantic_logs(
         self,
         struct_logs_df: pd.DataFrame,
         feature_columns: list[str],
-        log_regex_replase_fn: Callable[[str], str]
+        log_regex_replace_func: Callable[[str], str]
     ) -> pd.DataFrame:
         df = struct_logs_df.copy()
         data = []
         for _, row in tqdm(df.iterrows(), total=len(df), desc=f"Building semantic logs"):
             timestamp = row["timestamp"]
             log = ", ".join(row[feature_columns])
-            log = log_regex_replase_fn(log)
+            log = log_regex_replace_func(log)
             label = row["label"]
             data.append([timestamp, log, label])
         return pd.DataFrame(data, columns=["timestamp", "log", "label"])
 
     def load_semantic_logs(self, path: str) -> pd.DataFrame:
         return pd.read_csv(path).astype({"log": str, "timestamp": int, "label": str})
-    
-    def load_wins(self, path: str) -> pd.DataFrame:
-        return pd.read_csv(path).astype({ "timestamp": int, "win_id": int })
     
     def build_count_wins(
         self, 
@@ -151,10 +148,8 @@ class LogDataFrameHelper:
             current_time += pd.Timedelta(seconds=win_step_secs)
         return pd.concat(win_dfs, ignore_index=True)
     
-    def load_train_adllm_wins(self, path: str) -> pd.DataFrame:
-        return pd.read_csv(path).astype({ 
-            "log": str, "lem_score": float, "binary_label": int, "timestamp": int, "win_id": int
-        })
+    def load_wins(self, path: str) -> pd.DataFrame:
+        return pd.read_csv(path).astype({ "timestamp": int, "win_id": int })
     
     def build_train_adllm_wins(
         self,
@@ -171,3 +166,7 @@ class LogDataFrameHelper:
             win_dfs.append(win_df)
         return pd.concat(win_dfs, ignore_index=True)
     
+    def load_train_adllm_wins(self, path: str) -> pd.DataFrame:
+        return pd.read_csv(path).astype({ 
+            "log": str, "lem_score": float, "binary_label": int, "timestamp": int, "win_id": int
+        })
