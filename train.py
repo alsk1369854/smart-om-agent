@@ -163,11 +163,12 @@ def stage_two_train(
 
 
 def main():
-    # ===== Start of settings =====
     # Train output directory
     # - Log Embed Model: ./output/{CASE_NAME}/lem/
     # - Anomaly Detection LLM: ./output/{CASE_NAME}/adllm/
-    CASE_NAME: str = "smart-om-agent-bgl-cw-gemma2-9b" # customize your case name
+    
+    # ===== Start of settings =====
+    CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
     DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
     SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
     SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
@@ -177,6 +178,7 @@ def main():
     # Prepare training data
     work_config = configs.WORK_CONFIG_MAP[DATASET_TYPE]
     ldfh = log_utils.LogDataFrameHelper(work_config.dataset_config.path)
+    
     # Build structured logs
     struct_logs_df = ldfh.build_struct_logs(
         log_path=work_config.dataset_config.path,
@@ -185,6 +187,7 @@ def main():
         end_line=work_config.dataset_config.end_line,
     )
     ldfh.save_to_csv(struct_logs_df, f"{work_config.dataset_config.path}-struct-logs.csv")
+    
     # Build semantic logs
     logs_df = ldfh.build_semantic_logs(
         struct_logs_df=struct_logs_df,
@@ -192,6 +195,7 @@ def main():
         log_regex_replase_fn=log_utils.log_regex_replase,
     )
     ldfh.save_to_csv(logs_df, f"{work_config.dataset_config.path}-semantic-logs.csv")
+    
     # Split training and testing logs
     sampling_fn = samp_utils.train_test_sampling if SAMPLING_TYPE == "our" else samp_utils.logllm_train_test_sampling
     train_logs_df, test_logs_df = sampling_fn(logs_df, environments.TRAIN_RATIO)
@@ -199,9 +203,11 @@ def main():
     # ===== Stage one training =====
     train_unique_logs_df = train_logs_df.drop_duplicates(subset=["log", "label"], inplace=False)
     test_unique_logs_df = test_logs_df.drop_duplicates(subset=["log", "label"], inplace=False)
+    
     # Input and output cases
     train_unique_logs, train_unique_logs_labels = train_unique_logs_df["log"].tolist(), train_unique_logs_df["label"].tolist()
     test_unique_logs, test_unique_logs_labels = test_unique_logs_df["log"].tolist(), test_unique_logs_df["label"].tolist()
+    
     # Train Log Embed Model
     stage_one_train(
         case_name=CASE_NAME, 
@@ -215,15 +221,18 @@ def main():
         case_name=CASE_NAME,
         logs=train_unique_logs + test_unique_logs,
     )
+    
     # Sliding log windows
     build_wins_fn = ldfh.build_count_wins if SLIDING_WIN_TYPE == "count" else ldfh.build_time_wins
     train_wins_df = build_wins_fn(df=train_logs_df)
     train_wins_df = ldfh.build_train_adllm_wins(train_wins_df, log_feature_vector_map)
     test_wins_df = build_wins_fn(df=test_logs_df)
     test_wins_df = ldfh.build_train_adllm_wins(test_wins_df, log_feature_vector_map)
+    
     # Input and output cases
     train_wins, train_wins_label = train_utils.parse_train_adllm_wins_df_to_train_case(train_wins_df)
     test_wins, test_wins_label = train_utils.parse_train_adllm_wins_df_to_train_case(test_wins_df)
+    
     # Train Anomaly Detection LLM
     stage_two_train(
         case_name=CASE_NAME,

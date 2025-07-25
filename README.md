@@ -54,14 +54,14 @@ The training results will be stored in `./output/{CASE_NAME}`
 
 - Set the following variations in train.py
     ```bash
-    CASE_NAME: str = "smart-om-agent-bgl-cw-gemma2-9b" # customize your case name
-    DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
+    CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
+    DATASET_TYPE: types.DatasetTypes = "BGL" # "BGL" | "Liberty" | "Thunderbird"
     SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
     SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
     BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
     ```
 
-- Run python `train.py` from the root directory to get fine-tuned models.
+- Run python `train.py` from the root directory to get trained models.
 
 ### 4. Used for system anomaly detection
 ```bash
