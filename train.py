@@ -2,7 +2,7 @@
 import torch
 import gc
 from torch.utils.data import DataLoader
-from modules import configs, environments, models, datasets, train_lem, types, train_adllm
+from modules import configs, environments, models, datasets, train_lem, types, trainers
 from modules.utils import log_utils, samp_utils, train_utils
 
 
@@ -72,7 +72,7 @@ def stage_one_train(
         dataset=train_dataset, batch_size=micro_batch_size, generator=train_generator,
     )
     test_loader = DataLoader(dataset=test_dataset, batch_size=batch_size)
-    train_lem.train(
+    trainers.LogEmbedModelTrainer.train(
         lem=log_embed_model, 
         train_loader=train_loader,
         test_loader=test_loader,
@@ -146,7 +146,7 @@ def stage_two_train(
         collate_fn=train_dataset.collate_fu
     )
     test_loader = DataLoader(dataset=test_dataset, batch_size=1, collate_fn=test_dataset.collate_fu)
-    train_adllm.train(
+    trainers.AnomalyDetectionLLMTrainer.train(
         adllm=anomaly_detection_llm,
         epochs=epochs,
         lr=lr,
