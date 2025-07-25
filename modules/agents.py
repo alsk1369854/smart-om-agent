@@ -1,6 +1,7 @@
 from modules import models
 from modules.utils import log_utils
 from langgraph.graph import START, END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field
 from typing import Callable
 
@@ -19,7 +20,7 @@ class SmartOperationAndMaintenanceAgent():
         self.log_regex_replace_func = log_regex_replace_func
         self.graph = self._build_graph()
 
-    def _build_graph(self):
+    def _build_graph(self) -> CompiledStateGraph:
 
         class State(BaseModel):
             logs: list[str] = Field(default_factory=list)

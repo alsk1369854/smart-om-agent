@@ -1,5 +1,6 @@
 import os
 import torch
+import numpy as np
 from torch import nn
 from transformers import BertTokenizerFast, BertModel, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from peft import get_peft_model, LoraConfig, TaskType, PeftModel
@@ -23,6 +24,15 @@ class LogEmbedModel(nn.Module):
             nn.Dropout(0.3),
             nn.Linear(in_features // 2, 1),
         )
+        
+    @classmethod
+    def new(cls, *, bert_path: str, device: torch.device | str = "auto") -> Self:
+        model = cls()
+        model.bert_tokenizer = BertTokenizerFast.from_pretrained(bert_path)
+        model.bert = BertModel.from_pretrained(bert_path, device_map=device)
+        model.device = model.bert.device
+        model.classifier.to(model.device)
+        return model
 
     @classmethod
     def from_pretrained(cls, *, path: str, device: torch.device | str = "auto") -> Self:
@@ -37,15 +47,6 @@ class LogEmbedModel(nn.Module):
         model.classifier.load_state_dict(classifier_state_dict)
         model.classifier.to(model.device)
         return model
-    
-    @classmethod
-    def new(cls, *, bert_path: str, device: torch.device | str = "auto") -> Self:
-        model = cls()
-        model.bert_tokenizer = BertTokenizerFast.from_pretrained(bert_path)
-        model.bert = BertModel.from_pretrained(bert_path, device_map=device)
-        model.device = model.bert.device
-        model.classifier.to(model.device)
-        return model
         
     @classmethod 
     def _get_save_paths(cls, save_base: str) -> types.LogEmbedModelSavePaths:
@@ -54,13 +55,13 @@ class LogEmbedModel(nn.Module):
             classifier=os.path.join(save_base, "classifier.pt"),
         )
         
-    def pred(self, logs: list[str]):
+    def pred(self, logs: list[str]) -> list[float]:
         self.eval()
         with torch.no_grad():
             outputs = self.forward(logs)
-            return torch.sigmoid(outputs).cpu().numpy()
+            return torch.sigmoid(outputs).cpu().numpy().tolist()
         
-    def forward(self, logs: list[str]):
+    def forward(self, logs: list[str]) -> torch.Tensor:
         tokenized = self.bert_tokenizer(
             logs, 
             return_tensors="pt", 
@@ -73,9 +74,9 @@ class LogEmbedModel(nn.Module):
         # 經過全連接層進行分類
         return self.classifier(outputs).squeeze(-1) 
     
-    def save_pretrained(self, path: str) -> None:
-        os.makedirs(path, exist_ok=True)
-        save_paths = self._get_save_paths(path)
+    def save_pretrained(self, save_base: str) -> None:
+        os.makedirs(save_base, exist_ok=True)
+        save_paths = self._get_save_paths(save_base)
         self.bert.save_pretrained(save_paths.bert)
         self.bert_tokenizer.save_pretrained(save_paths.bert)
         torch.save(self.classifier.state_dict(), save_paths.classifier)

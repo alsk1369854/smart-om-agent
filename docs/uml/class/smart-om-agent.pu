@@ -1,0 +1,42 @@
+@startuml
+skinparam classAttributeIconSize 0
+package "modules" {
+    ' package "agents" {
+    '     class "SmartOperationAndMaintenanceAgent" {
+    '         + {static} TOP_K_ABNORMAL_LOGS: int
+    '         + {static} LOG_EMBEDDING_BATCH_SIZE: int
+    '         + lem: LogEmbedModel
+    '         + adllm: AnomalyDetectionLLM
+    '         + log_regex_replace_func: Callable[[str], str]
+
+    '         + {static} SmartOperationAndMaintenanceAgent(lem: LogEmbedModel, adllm: AnomalyDetectionLLM, log_regex_replace_func: Callable[[str], str]): Self
+    '         + process_logs(logs: list[str]): str
+    '         - _build_graph(): CompiledStateGraph
+            
+    '     }
+    ' }
+
+    package "models" {
+        class "LogEmbedModel" {
+            + {static} MAX_TOKEN_LEN: int
+            + bert: BertModel
+            + bert_tokenizer: BertTokenizerFast
+            + device: torch.device
+
+            + {static} new(bert_path: str, device: torch.device | str): Self
+            + {static} from_pretrained(path: str, device: torch.device | str): Self
+            - {static} _get_save_paths(save_base: str): LogEmbedModelSavePaths
+            
+            + pred(logs: list[str]): list[float]
+            + forward(logs: list[str]): torch.Tensor
+            + save_pretrained(save_base: str): None
+
+        }
+        class "AnomalyDetectionLLM" {
+            + detect_anomalies(embeddings: list[float]): list[str]
+        }
+    }
+}
+
+
+@enduml

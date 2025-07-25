@@ -43,7 +43,7 @@ Benchmark datasets used in the experiments.
 
 ### 2. Install dependencies
 ```bash
-pip install transformers bitsandbytes peft datasets pandas torch scikit-learn pydantic matplotlib langgraph seaborn
+pip install transformers bitsandbytes peft pandas torch scikit-learn pydantic matplotlib langgraph seaborn
 ```
 
 ### 3. Two-stage training of **Smart O&M Agent**
