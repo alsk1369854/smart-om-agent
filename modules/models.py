@@ -35,8 +35,8 @@ class LogEmbedModel(nn.Module):
         return model
 
     @classmethod
-    def from_pretrained(cls, *, path: str, device: torch.device | str = "auto") -> Self:
-        save_paths = cls._get_save_paths(path)
+    def from_pretrained(cls, *, save_path: str, device: torch.device | str = "auto") -> Self:
+        save_paths = cls._get_save_paths(save_path)
         model = cls()
         # bert
         model.bert_tokenizer = BertTokenizerFast.from_pretrained(save_paths.bert)
@@ -49,10 +49,10 @@ class LogEmbedModel(nn.Module):
         return model
         
     @classmethod 
-    def _get_save_paths(cls, save_base: str) -> types.LogEmbedModelSavePaths:
+    def _get_save_paths(cls, save_path: str) -> types.LogEmbedModelSavePaths:
         return types.LogEmbedModelSavePaths(
-            bert=os.path.join(save_base, "bert"),
-            classifier=os.path.join(save_base, "classifier.pt"),
+            bert=os.path.join(save_path, "bert"),
+            classifier=os.path.join(save_path, "classifier.pt"),
         )
         
     def pred(self, logs: list[str]) -> list[float]:
@@ -74,9 +74,9 @@ class LogEmbedModel(nn.Module):
         # 經過全連接層進行分類
         return self.classifier(outputs).squeeze(-1) 
     
-    def save_pretrained(self, save_base: str) -> None:
-        os.makedirs(save_base, exist_ok=True)
-        save_paths = self._get_save_paths(save_base)
+    def save_pretrained(self, save_path: str) -> None:
+        os.makedirs(save_path, exist_ok=True)
+        save_paths = self._get_save_paths(save_path)
         self.bert.save_pretrained(save_paths.bert)
         self.bert_tokenizer.save_pretrained(save_paths.bert)
         torch.save(self.classifier.state_dict(), save_paths.classifier)
@@ -89,52 +89,17 @@ class AnomalyDetectionLLM(nn.Module):
     llm_tokenizer: AutoTokenizer
     device: torch.device
     max_logs_tokens_len: int
-    system_prefix_tokens: Any
-    system_suffix_tokens: Any
-    abnormal_output_tokens: Any
-    normal_output_tokens: Any
+    system_prefix_tokens: torch.Tensor
+    system_suffix_tokens: torch.Tensor
+    abnormal_output_tokens: torch.Tensor
+    normal_output_tokens: torch.Tensor
     
     def __init__(self) -> None:
         super().__init__()
-
-    @classmethod
-    def from_pretrained(
-        cls, 
-        *, 
-        save_path: str, 
-        base_llm_path: str,  
-        device: str | torch.device = "auto", 
-        system_name: str | None = None, 
-        field_names: str = "",
-        torch_dtype: torch.dtype = torch.bfloat16,
-    ) -> Self:
-        os.makedirs(save_path, exist_ok=True)
-        save_paths = cls._get_save_paths(save_path)
-        model = cls()
-        bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,  # load the model into memory using 4-bit precision
-            bnb_4bit_use_double_quant=False,  # use double quantition
-            bnb_4bit_quant_type="nf4",  # use NormalFloat quantition
-            bnb_4bit_compute_dtype=torch_dtype  # use hf for computing when we need
-        )
-        base_llm = AutoModelForCausalLM.from_pretrained(
-            base_llm_path, 
-            torch_dtype=torch_dtype, 
-            quantization_config=bnb_config, 
-            device_map=device,
-            attn_implementation="eager",
-        )
-        model.llm = PeftModel.from_pretrained(base_llm, save_paths.lora, is_trainable=True)
-        model.llm_tokenizer = AutoTokenizer.from_pretrained(base_llm_path, padding_side="right")
-        model.llm_tokenizer.pad_token_id = model.llm_tokenizer.eos_token_id if model.llm_tokenizer.pad_token_id is None else model.llm_tokenizer.pad_token_id
-        model.device = model.llm.device
-        model.set_system_name_and_field_names(system_name=system_name, field_names=field_names)
-        return model
-    
+        
     @classmethod
     def new(
-        cls, 
-        *, 
+        cls, *, 
         base_llm_path: str, 
         device: str | torch.device = "auto", 
         system_name: str | None = None, 
@@ -171,11 +136,46 @@ class AnomalyDetectionLLM(nn.Module):
         model.device = model.llm.device
         model.set_system_name_and_field_names(system_name=system_name, field_names=field_names)
         return model
+
+    @classmethod
+    def from_pretrained(
+        cls, *, 
+        save_path: str, 
+        base_llm_path: str,  
+        device: str | torch.device = "auto", 
+        system_name: str | None = None, 
+        field_names: str = "",
+        torch_dtype: torch.dtype = torch.bfloat16,
+    ) -> Self:
+        os.makedirs(save_path, exist_ok=True)
+        save_paths = cls._get_save_paths(save_path)
+        model = cls()
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,  # load the model into memory using 4-bit precision
+            bnb_4bit_use_double_quant=False,  # use double quantition
+            bnb_4bit_quant_type="nf4",  # use NormalFloat quantition
+            bnb_4bit_compute_dtype=torch_dtype  # use hf for computing when we need
+        )
+        base_llm = AutoModelForCausalLM.from_pretrained(
+            base_llm_path, 
+            torch_dtype=torch_dtype, 
+            quantization_config=bnb_config, 
+            device_map=device,
+            attn_implementation="eager",
+        )
+        model.llm = PeftModel.from_pretrained(base_llm, save_paths.lora, is_trainable=True)
+        model.llm_tokenizer = AutoTokenizer.from_pretrained(base_llm_path, padding_side="right")
+        model.llm_tokenizer.pad_token_id = model.llm_tokenizer.eos_token_id if model.llm_tokenizer.pad_token_id is None else model.llm_tokenizer.pad_token_id
+        model.device = model.llm.device
+        model.set_system_name_and_field_names(system_name=system_name, field_names=field_names)
+        return model
+    
+
     
     @classmethod
-    def _get_save_paths(self, save_base: str) -> types.AnomalyDetecteLLMSavePaths:
-        return types.AnomalyDetecteLLMSavePaths(
-            lora=os.path.join(save_base, "lora"),
+    def _get_save_paths(self, save_path: str) -> types.AnomalyDetectionLLMSavePaths:
+        return types.AnomalyDetectionLLMSavePaths(
+            lora=os.path.join(save_path, "lora"),
         )
         
     def generate(self, log_win: list[str]) -> str:
@@ -205,7 +205,7 @@ class AnomalyDetectionLLM(nn.Module):
         self, 
         log_wins: list[list[str]], 
         targets: list[int],
-    ):
+    ) -> torch.Tensor:
         input_ids_list = []
         attention_mask_list = []
         labels_list = []
@@ -251,13 +251,13 @@ class AnomalyDetectionLLM(nn.Module):
 
         return self.llm(input_ids=input_ids, attention_mask=attention_mask, labels=labels)
 
-    def save_pretrained(self, *, path: str) -> None:
-        os.makedirs(path, exist_ok=True)
-        save_paths = self._get_save_paths(path)
+    def save_pretrained(self, *, save_path: str) -> None:
+        os.makedirs(save_path, exist_ok=True)
+        save_paths = self._get_save_paths(save_path)
         self.llm.save_pretrained(save_paths.lora)
 
     def set_system_name_and_field_names(self, *, system_name: str | None, field_names: str) -> None:
-        prefix_prompt = prompts.ANOMALY_DETECTE_LLM_PREFIX_INSTRUCTION_TEMPLATE.format(
+        prefix_prompt = prompts.ANOMALY_DETECTION_LLM_PREFIX_INSTRUCTION_TEMPLATE.format(
             system_name="" if system_name is None else f" {system_name} ",
             field_names=field_names
         )
@@ -266,7 +266,7 @@ class AnomalyDetectionLLM(nn.Module):
             return_tensors="pt"
         )["input_ids"][0]
         shffix_tokens = self.llm_tokenizer(
-            prompts.ANOMALY_DETECTE_LLM_SUFFIX_INSTRUCTION, 
+            prompts.ANOMALY_DETECTION_LLM_SUFFIX_INSTRUCTION, 
             add_special_tokens=False, # Omit [BOS] token
             return_tensors="pt"
         )["input_ids"][0]

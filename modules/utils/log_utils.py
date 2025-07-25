@@ -45,10 +45,10 @@ def log_regex_replase(log: str) -> str:
     return log
 
 class LogDataFrameHelper:
-    def __init__(self, bast_log_path: str):
-        self.bast_log_path = bast_log_path
+    def __init__(self):
+        pass
 
-    def save_to_csv(self, df: pd.DataFrame, path: str):
+    def save_to_csv(self, df: pd.DataFrame, path: str) -> None: 
         df.to_csv(path, index=False, chunksize=10000)
         
     def load_struct_logs(self, path: str) -> pd.DataFrame:

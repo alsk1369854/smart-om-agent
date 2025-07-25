@@ -1,42 +1,77 @@
 @startuml
 skinparam classAttributeIconSize 0
-package "modules" {
-    ' package "agents" {
-    '     class "SmartOperationAndMaintenanceAgent" {
-    '         + {static} TOP_K_ABNORMAL_LOGS: int
-    '         + {static} LOG_EMBEDDING_BATCH_SIZE: int
-    '         + lem: LogEmbedModel
-    '         + adllm: AnomalyDetectionLLM
-    '         + log_regex_replace_func: Callable[[str], str]
+' left to right direction
+' top to bottom direction
 
-    '         + {static} SmartOperationAndMaintenanceAgent(lem: LogEmbedModel, adllm: AnomalyDetectionLLM, log_regex_replace_func: Callable[[str], str]): Self
-    '         + process_logs(logs: list[str]): str
-    '         - _build_graph(): CompiledStateGraph
+package "modules" {
+    package "agents" {
+        class SmartOperationAndMaintenanceAgent {
+            + {static} TOP_K_ABNORMAL_LOGS: int
+            + {static} LOG_EMBEDDING_BATCH_SIZE: int
+            + lem: LogEmbedModel
+            + adllm: AnomalyDetectionLLM
+            + log_regex_replace_func: Callable[[str], str]
+            + graph: CompiledStateGraph
+
+            + {static} SmartOperationAndMaintenanceAgent(lem: LogEmbedModel, adllm: AnomalyDetectionLLM, log_regex_replace_func: Callable[[str], str]): Self
+            + process_logs(logs: list[str]): str
+            - _build_graph(): CompiledStateGraph
             
-    '     }
-    ' }
+        }
+    }
 
     package "models" {
-        class "LogEmbedModel" {
+        class LogEmbedModel {
             + {static} MAX_TOKEN_LEN: int
             + bert: BertModel
             + bert_tokenizer: BertTokenizerFast
             + device: torch.device
 
             + {static} new(bert_path: str, device: torch.device | str): Self
-            + {static} from_pretrained(path: str, device: torch.device | str): Self
-            - {static} _get_save_paths(save_base: str): LogEmbedModelSavePaths
-            
+            + {static} from_pretrained(save_path: str, device: torch.device | str): Self
+            - {static} _get_save_paths(save_path: str): LogEmbedModelSavePaths
             + pred(logs: list[str]): list[float]
             + forward(logs: list[str]): torch.Tensor
-            + save_pretrained(save_base: str): None
-
+            + save_pretrained(save_path: str): None
         }
-        class "AnomalyDetectionLLM" {
-            + detect_anomalies(embeddings: list[float]): list[str]
+
+        class AnomalyDetectionLLM {
+            + {static} MAX_TOKEN_LEN: int
+            + llm: PeftModel
+            + llm_tokenizer: AutoTokenizer
+            + device: torch.device
+            + max_logs_tokens_len: int
+            + system_prefix_tokens: torch.Tensor
+            + system_suffix_tokens: torch.Tensor
+            + abnormal_output_tokens: torch.Tensor
+            + normal_output_tokens: torch.Tensor
+
+            + {static} new(base_llm_path: str, device: torch.device | str, system_name: str | None, field_names: str, torch_dtype: torch.dtype): Self
+            + {static} from_pretrained(save_path: str, base_llm_path: str, device: torch.device | str, system_name: str | None, field_names: str, torch_dtype: torch.dtype): Self
+            - {static} _get_save_paths(save_path: str): AnomalyDetectionLLMSavePaths
+            + generate(log_win: list[str]): str
+            + forward(log_win: list[list[str]], targets: list[int]): torch.Tensor
+            + save_pretrained(save_path: str): None
+            + set_system_name_and_field_names(system_name: str | None, field_names: str): None
+            - _parse_log_win(log_win: list[str]): torch.Tensor
+        }
+    }
+
+    package "train_adllm" {}
+    package "train_lem" {}
+
+    package "utils" {
+        package "log_utils" {
+            class LogDataFrameHelper {
+                + {static} LogDataFrameHelper(): Self
+                + save_to_csv(df: pd.DataFrame, path: str): None
+            }
         }
     }
 }
 
-
+SmartOperationAndMaintenanceAgent --> LogEmbedModel
+SmartOperationAndMaintenanceAgent --> AnomalyDetectionLLM
+train_adllm ..> AnomalyDetectionLLM
+train_lem ..> LogEmbedModel
 @enduml

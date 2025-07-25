@@ -17,7 +17,7 @@ class EvaluationResult(BaseModel):
     recall: float
     cm: list[list[int]]
 
-class AnomalyDetecteLLMSavePaths(BaseModel):
+class AnomalyDetectionLLMSavePaths(BaseModel):
     lora: str
 
 class LogEmbedModelSavePaths(BaseModel):

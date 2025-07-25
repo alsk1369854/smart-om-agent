@@ -8,6 +8,11 @@ from typing import Callable
 class SmartOperationAndMaintenanceAgent():
     TOP_K_ABNORMAL_LOGS = 5
     LOG_EMBEDDING_BATCH_SIZE = 100
+    
+    lem: models.LogEmbedModel
+    adllm: models.AnomalyDetectionLLM
+    log_regex_replace_func: Callable[[str], str]
+    graph: CompiledStateGraph
 
     def __init__(
         self, *,
