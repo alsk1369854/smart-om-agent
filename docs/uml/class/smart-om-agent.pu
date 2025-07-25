@@ -1,7 +1,10 @@
 @startuml
 skinparam classAttributeIconSize 0
-' left to right direction
+left to right direction
 ' top to bottom direction
+
+skinparam linetype ortho
+' skinparam linetype polyline
 
 package "modules" {
     package "agents" {
@@ -57,7 +60,33 @@ package "modules" {
         }
     }
 
-    package "train_adllm" {}
+    package "configs" {
+        stereotype WORK_CONFIG_MAP {
+            ["BGL"]: BGL_WORK_CONFIG,
+            ["Liberty"]: LIBERTY_WORK_CONFIG,
+            ["Thunderbird"]: THUNDERBIRD_WORK_CONFIG,
+            ["test"]: TEST_WORK_CONFIG,
+        }
+    }
+
+    package "trainers" {
+    }
+
+    class train_adllm {}
+
+    ' package "train_adllm" {
+'         def train(
+'     *,
+'     adllm: models.AnomalyDetectionLLM,
+'     epochs: int,
+'     lr: float,
+'     gradient_accumulation_steps: int,
+'     train_loader: DataLoader, 
+'     test_loader: DataLoader,
+'     top_k_logs: int,
+'     save_base: str,
+' ) -> None:
+    ' }
     package "train_lem" {}
 
     package "utils" {
@@ -69,6 +98,11 @@ package "modules" {
                 + load_struct_logs(path: str): pd.DataFrame
                 + build_semantic_logs(struct_logs_df: pd.DataFrame, feature_columns: list[str], log_regex_replace_func: Callable[[str], str]): pd.DataFrame
                 + load_semantic_logs(path: str): pd.DataFrame
+                + build_count_wins(df: pd.DataFrame, win_size_logs: int, win_step_logs: int): pd.DataFrame
+                + build_time_wind(df: pd.DataFrame, win_size_secs: int, win_step_secs: int): pd.DataFrame
+                + load_wins(path: str): pd.DataFrame
+                + build_train_adllm_wins(win_df: pd.DataFrame, log_feature_vector_map: dict[str, float]): pd.DataFrame
+                + load_train_adllm_wins(path: str): pd.DataFrame
             }
         }
     }

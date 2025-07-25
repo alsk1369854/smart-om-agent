@@ -154,11 +154,11 @@ class LogDataFrameHelper:
     def build_train_adllm_wins(
         self,
         wins_df: pd.DataFrame,
-        lem_score_map: dict[str, float],
+        log_feature_vector_map: dict[str, float],
     ) -> pd.DataFrame:
         wins_df = wins_df.copy()
         wins_df["binary_label"] = wins_df["label"].apply(lambda x: 0 if x == "-" else 1)
-        wins_df["lem_score"] = wins_df["log"].apply(lambda x: lem_score_map[x])
+        wins_df["lem_score"] = wins_df["log"].apply(lambda x: log_feature_vector_map[x])
         win_dfs = []
         for win_id, win_df in tqdm(wins_df.groupby("win_id"), desc="Building train adllm wins"):
             win_df.sort_values(by=["lem_score"], ascending=False, inplace=True)
