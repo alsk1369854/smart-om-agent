@@ -35,6 +35,9 @@ Benchmark datasets used in the experiments.
 
 
 ## Using Our Code
+### Class UML Diagram
+<image src="https://raw.githubusercontent.com/alsk1369854/smart-om-agent/refs/heads/master/docs/uml/class/smart-om-agent.png" alt="smart-om-agent.png">
+
 ### 1. Setup
 - Python: 3.12.11
 - CUDA: 12
