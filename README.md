@@ -82,9 +82,11 @@ The training results will be stored in `./output/{CASE_NAME}`
 - Run Jupyter `metrics.ipynb` from the root directory to view `<CASE_NAME>` training history
 
 ### 4. Used for system anomaly detection
-```bash
-python use.py
-```
+
+- Run python `use.py` from the root directory to perform system anomaly detection
+    ```bash
+    python use.py
+    ```
 
 
 <h1 id="download-benchmarks-cli">

@@ -18,7 +18,7 @@ class SmartOperationAndMaintenanceAgent():
         self, *,
         lem: models.LogEmbedModel,
         adllm: models.AnomalyDetectionLLM,
-        log_regex_replace_func: Callable[[str], str] = log_utils.log_regx_replase,
+        log_regex_replace_func: Callable[[str], str] = log_utils.log_regex_replace,
     ):
         self.lem = lem
         self.adllm = adllm
