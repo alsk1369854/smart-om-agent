@@ -1,10 +1,34 @@
-
 import torch
 import gc
 import functools
 from torch.utils.data import DataLoader
 from modules import configs, environments, models, datasets, train_lem, types, trainers
 from modules.utils import log_utils, samp_utils, train_utils
+
+
+# Train output directory
+# - Log Embed Model: ./output/{CASE_NAME}/lem/
+# - Anomaly Detection LLM: ./output/{CASE_NAME}/adllm/
+
+# ===== Start of settings =====
+# Smart O&M Agent Train settings
+CASE_NAME: str = "bgl-cw-gemma2-9b" # Customize your train case name
+DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
+SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
+SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
+BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+
+# Stage one training settings
+LEM_TRAIN_EPOCHS: int = 10 # Log Embed Model training epochs
+LEM_TRAIN_LR: float = 5e-5 # Log Embed Model learning rate
+LEM_SAFE_BATCH_SIZE: int = 256 # Log Embed Model safe batch size
+
+# Stage two training settings
+ADLLM_TRAIN_EPOCHS: int = 5 # Anomaly Detection LLM training epochs
+ADLLM_TRAIN_LR: float = 5e-5 # Anomaly Detection LLM learning rate
+ADLLM_SAFE_BATCH_SIZE: int = 3 # Anomaly Detection LLM safe GPU single batch memory usage
+ADLLM_TOP_K_LOGS: int = 5 # Anomaly Detection LLM top K abnormal logs for each window
+# ===== End of settings =====
 
 
 def get_log_feature_vector_map(
@@ -163,31 +187,7 @@ def stage_two_train(
     torch.cuda.empty_cache()
 
 
-def main():
-    # Train output directory
-    # - Log Embed Model: ./output/{CASE_NAME}/lem/
-    # - Anomaly Detection LLM: ./output/{CASE_NAME}/adllm/
-    
-    # ===== Start of settings =====
-    # Smart O&M Agent Train settings
-    CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
-    DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
-    SAMPLING_TYPE: types.SamplingTypes = "our" # "our" | "logllm"
-    SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
-    BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
-    
-    # stage one training settings
-    LEM_TRAIN_EPOCHS: int = 10 # Log Embed Model training epochs
-    LEM_TRAIN_LR: float = 5e-5 # Log Embed Model learning rate
-    LEM_SAFE_BATCH_SIZE: int = 256 # Log Embed Model safe batch size
-    
-    # stage two training settings
-    ADLLM_TRAIN_EPOCHS: int = 5 # Anomaly Detection LLM training epochs
-    ADLLM_TRAIN_LR: float = 5e-5 # Anomaly Detection LLM learning rate
-    ADLLM_SAFE_BATCH_SIZE: int = 3 # Anomaly Detection LLM safe GPU single batch memory usage
-    ADLLM_TOP_K_LOGS: int = 5 # Anomaly Detection LLM top K abnormal logs for each window
-    # ===== End of settings =====
-    
+def main():    
     # Prepare training data
     work_config = configs.WORK_CONFIG_MAP[DATASET_TYPE]
     ldfh = log_utils.LogDataFrameHelper()

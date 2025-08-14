@@ -1,15 +1,18 @@
+
 import re
 import pandas as pd
 from modules import models, agents, configs, environments, types
 from modules.utils import log_utils
 
+# Example usage of Smart Operation And Maintenance Agent   
+# ===== Start of settings =====
+CASE_NAME: str = "bgl-cw-gemma2-9b" # Name of the trained case
+DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
+BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+# ===== End of settings =====
+
 
 def main() -> None:
-    # Example usage of Smart Operation And Maintenance Agent
-    CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
-    DATASET_TYPE: types.DatasetTypes = "test" # "BGL" | "Liberty" | "Thunderbird"
-    BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
-    
     work_config = configs.WORK_CONFIG_MAP[DATASET_TYPE]
     
     # 1. Instantiate the log embedding model

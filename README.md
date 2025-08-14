@@ -54,7 +54,7 @@ pip install -U "huggingface_hub[cli]"
 The training results will be stored in `./output/{CASE_NAME}`
 
 - Set the following variations in train.py
-    ```bash
+    ```python
     # Smart O&M Agent Train settings
     CASE_NAME: str = "bgl-cw-gemma2-9b" # customize your case name
     DATASET_TYPE: types.DatasetTypes = "BGL" # "BGL" | "Liberty" | "Thunderbird" | "test"(based BGL)
@@ -62,12 +62,12 @@ The training results will be stored in `./output/{CASE_NAME}`
     SLIDING_WIN_TYPE: types.SlidingWindowTypes = "count" # "count" | "time"
     BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
     
-    # stage one training settings
+    # Stage one training settings
     LEM_TRAIN_EPOCHS: int = 10 # Log Embed Model training epochs
     LEM_TRAIN_LR: float = 5e-5 # Log Embed Model learning rate
     LEM_SAFE_BATCH_SIZE: int = 256 # Log Embed Model safe batch size
     
-    # stage two training settings
+    # Stage two training settings
     ADLLM_TRAIN_EPOCHS: int = 5 # Anomaly Detection LLM training epochs
     ADLLM_TRAIN_LR: float = 5e-5 # Anomaly Detection LLM learning rate
     ADLLM_SAFE_BATCH_SIZE: int = 3 # Anomaly Detection LLM safe GPU single batch memory usage
@@ -78,10 +78,18 @@ The training results will be stored in `./output/{CASE_NAME}`
     ```bash
     python train.py
     ```
-
+#### 3-1. \[Option\]: Anaysis
+- Run Jupyter `oversampling.ipynb` from the root directory to view `Dataset` oversampling distribution
 - Run Jupyter `metrics.ipynb` from the root directory to view `<CASE_NAME>` training history
 
 ### 4. Used for system anomaly detection
+- Set the following variations in use.py
+    ```python
+    CASE_NAME: str = "bgl-cw-gemma2-9b" # Name of the trained case
+    DATASET_TYPE: types.DatasetTypes = "BGL" # "BGL" | "Liberty" | "Thunderbird" | "test"(based BGL)
+    BASE_LLM: types.BaseLLMTypes = "gemma-2-9b" # "gemma-2-9b" | "gemma-3-4b-it" | "Llama-3.1-8B-Instruct" | "Llama-3.2-3B-Instruct"
+    ```
+
 
 - Run python `use.py` from the root directory to perform system anomaly detection
     ```bash
