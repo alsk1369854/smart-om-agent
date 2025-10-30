@@ -46,8 +46,7 @@ Benchmark datasets used in the experiments.
 
 ### 2. Install dependencies
 ```bash
-pip install transformers bitsandbytes peft pandas torch scikit-learn pydantic matplotlib langgraph seaborn
-pip install -U "huggingface_hub[cli]"
+pip install transformers bitsandbytes peft pandas torch scikit-learn pydantic matplotlib langgraph seaborn huggingface_hub
 ```
 
 ### 3. Two-stage training of **Smart O&M Agent**
@@ -129,41 +128,41 @@ mkdir -p ${DATA_DIR}/${DATA_NAME} && curl -L http://0b4af6cdc2f0c5998459-c0245c5
 ## 1. Login Huggingface
 ```bash
 export HF_TOKEN=<your-huggingface-token>
-huggingface-cli login --token ${HF_TOKEN}
 ```
 
 ## [BERT](https://huggingface.co/google-bert/bert-base-uncased)
 ```bash
 export SAVE_PATH=hf_models/bert-base-uncased
 export MODEL_NAME=google-bert/bert-base-uncased
-nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
+nohup bash -c "hf download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
 ## [Gemma2-9B](https://huggingface.co/google/gemma-2-9b)
 ```bash
 export SAVE_PATH=hf_models/gemma-2-9b
 export MODEL_NAME=google/gemma-2-9b
-nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
+nohup bash -c "hf download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
 ## [Gemma3-4B-IT](https://huggingface.co/google/gemma-3-4b-it)
 ```bash
 export SAVE_PATH=hf_models/gemma-3-4b-it
 export MODEL_NAME=google/gemma-3-4b-it
-nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
+nohup bash -c "hf download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
 ## [Llama3.2-3B](https://huggingface.co/meta-llama/Llama-3.2-3B-Instruct)
 ```bash
 export SAVE_PATH=hf_models/Llama-3.2-3B-Instruct
 export MODEL_NAME=meta-llama/Llama-3.2-3B-Instruct
-nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
+nohup bash -c "hf download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
 
 ## [Llama3.1-8B](https://huggingface.co/meta-llama/Llama-3.1-8B-Instruct)
 ```bash
 export SAVE_PATH=hf_models/Llama-3.1-8B-Instruct
 export MODEL_NAME=meta-llama/Llama-3.1-8B-Instruct
-nohup bash -c "huggingface-cli download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
+nohup bash -c "hf download ${MODEL_NAME} --local-dir ${SAVE_PATH}" &
 ```
+
 
